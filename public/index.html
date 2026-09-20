@@ -35,6 +35,7 @@
   .btn{ display:inline-block; padding:14px 26px; border-radius:100px; font-weight:700; text-decoration:none; font-size:1rem; border:2px solid transparent; cursor:pointer; }
   .btn-primary{background:var(--leaf); color:white; box-shadow:0 6px 0 var(--leaf-dark);}
   .btn-ghost{background:transparent; border-color:var(--soil); color:var(--soil);}
+  .btn-sm{ padding:8px 16px; font-size:.85rem; }
   .plate{ width:100%; max-width:420px; aspect-ratio:4/3; background:var(--turmeric); border-radius:32px; display:flex; align-items:center; justify-content:center; overflow:hidden; box-shadow: 0 18px 40px rgba(91,58,36,0.22); border:8px solid var(--card); transform:rotate(-3deg); transition:transform .3s ease; }
   .plate:hover{transform:rotate(0deg);}
   .plate img{ width:100%; height:100%; object-fit:cover; }
@@ -69,6 +70,8 @@
   .service-card .price{ font-family:'Fredoka'; font-weight:700; color:var(--chili); font-size:1.15rem; margin:6px 0 12px; }
   .service-card .btn-buy{ width:100%; text-align:center; padding:10px 20px; font-size:.9rem; }
   .cart-btn{ background:var(--card); border:2px solid var(--leaf); border-radius:100px; padding:9px 16px; font-size:1.1rem; cursor:pointer; position:relative; }
+  .auth-area{ display:flex; align-items:center; gap:8px; }
+  .auth-hi{ font-weight:700; color:var(--leaf-dark); font-size:.9rem; margin-right:4px; }
   .cart-badge{ position:absolute; top:-6px; right:-6px; background:var(--chili); color:#fff; font-size:.7rem; font-weight:700; border-radius:100px; width:20px; height:20px; align-items:center; justify-content:center; }
   .cart-row{ display:grid; grid-template-columns:1fr auto auto auto auto auto; gap:8px; align-items:center; padding:10px 0; border-bottom:1px solid var(--cream-2); font-size:.9rem; }
   .cart-row-name{ font-weight:700; color:var(--leaf-dark); }
@@ -76,6 +79,7 @@
   .cart-qty-btn{ width:26px; height:26px; border-radius:50%; border:2px solid var(--cream-2); background:var(--cream); cursor:pointer; font-weight:700; }
   .cart-remove{ background:none; border:none; color:var(--chili); font-size:1.2rem; cursor:pointer; }
   .modal-overlay{ display:none; position:fixed; inset:0; background:rgba(91,58,36,0.45); z-index:100; align-items:center; justify-content:center; padding:20px; }
+  .muted{ color:#8a7457; font-size:.9rem; }
   .modal-box{ background:var(--card); border-radius:24px; padding:32px; max-width:420px; width:100%; position:relative; }
   .modal-close{ position:absolute; top:14px; right:16px; background:none; border:none; font-size:1.5rem; color:var(--soil); cursor:pointer; }
   footer{ background:var(--soil); color:#c9bda6; text-align:center; padding:26px 0; font-size:.9rem; }
@@ -89,6 +93,7 @@
   <a href="#home" class="brand"><span class="mark">BB</span> Bharath Bhoomi</a>
   <ul class="navlinks"><li><a href="#home">Home</a></li><li><a href="#about">About</a></li><li><a href="#services">Products</a></li><li><a href="#contact">Contact</a></li></ul>
   <button type="button" class="cart-btn" onclick="openCart()">🛒 <span id="cartBadge" class="cart-badge" style="display:none;">0</span></button>
+  <div id="authArea" class="auth-area"></div>
 </nav></header>
 
 <section class="hero" id="home"><div class="wrap hero-grid">
@@ -155,9 +160,71 @@
     <form id="checkoutForm">
       <div class="field"><label>Your name</label><input id="co_name" required></div>
       <div class="field"><label>Email</label><input id="co_email" type="email" required></div>
+      <div class="field"><label>Delivery address</label><textarea id="co_address" rows="2" required></textarea></div>
+      <div class="field"><label>Pincode</label><input id="co_pincode" inputmode="numeric" required></div>
+      <div class="field"><label>Landmark (optional)</label><input id="co_landmark"></div>
+      <div class="field">
+        <label>Preferred delivery time</label>
+        <select id="co_time" required>
+          <option value="">Select a slot…</option>
+          <option value="Morning (9am–12pm)">Morning (9am–12pm)</option>
+          <option value="Afternoon (12pm–4pm)">Afternoon (12pm–4pm)</option>
+          <option value="Evening (4pm–8pm)">Evening (4pm–8pm)</option>
+          <option value="Anytime">Anytime</option>
+        </select>
+      </div>
       <button type="submit" class="btn btn-primary">Pay now (test)</button>
       <span class="form-note" id="checkoutNote"></span>
     </form>
+  </div>
+</div>
+
+<div class="modal-overlay" id="signInModal">
+  <div class="modal-box">
+    <button type="button" class="modal-close" onclick="closeModal('signInModal')">×</button>
+    <h3>Sign in</h3>
+    <form id="signInForm">
+      <div class="field"><label>Email</label><input id="si_email" type="email" required></div>
+      <div class="field"><label>Password</label><input id="si_password" type="password" required></div>
+      <button type="submit" class="btn btn-primary">Sign in</button>
+      <span class="form-note" id="signInNote"></span>
+    </form>
+    <p class="muted" style="margin-top:14px;">New here? <a href="#" onclick="switchModal('signInModal','signUpModal'); return false;">Create an account</a></p>
+  </div>
+</div>
+
+<div class="modal-overlay" id="signUpModal">
+  <div class="modal-box">
+    <button type="button" class="modal-close" onclick="closeModal('signUpModal')">×</button>
+    <h3>Create account</h3>
+    <form id="signUpForm">
+      <div class="field"><label>Your name</label><input id="su_name" required></div>
+      <div class="field"><label>Email</label><input id="su_email" type="email" required></div>
+      <div class="field"><label>Password</label><input id="su_password" type="password" minlength="6" required></div>
+      <button type="submit" class="btn btn-primary">Sign up</button>
+      <span class="form-note" id="signUpNote"></span>
+    </form>
+    <p class="muted" style="margin-top:14px;">Already have an account? <a href="#" onclick="switchModal('signUpModal','signInModal'); return false;">Sign in</a></p>
+  </div>
+</div>
+
+<div class="modal-overlay" id="myOrdersModal">
+  <div class="modal-box">
+    <button type="button" class="modal-close" onclick="closeModal('myOrdersModal')">×</button>
+    <h3>My orders</h3>
+    <div id="myOrdersList"><p class="muted">Loading…</p></div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="confirmModal">
+  <div class="modal-box" style="text-align:center;">
+    <button type="button" class="modal-close" onclick="closeConfirm()">×</button>
+    <div style="font-size:2.4rem;">✅</div>
+    <h3>Order confirmed!</h3>
+    <p style="font-weight:700; color:var(--chili);" id="confirmOrderId"></p>
+    <p class="muted" id="confirmDetails"></p>
+    <p class="muted" style="font-size:.85rem;">(Test mode — no real payment was made)</p>
+    <button type="button" class="btn btn-primary" style="width:100%; text-align:center;" onclick="closeConfirm()">Done</button>
   </div>
 </div>
 
@@ -263,6 +330,11 @@ function goToCheckout(){
   closeCart();
   document.getElementById('checkoutSummary').textContent =
     cart.map(i => `${i.name} ×${i.quantity}`).join(', ') + ' — ₹' + cartTotal().toFixed(0);
+  const c = getCustomer();
+  if (c){
+    document.getElementById('co_name').value = c.name;
+    document.getElementById('co_email').value = c.email;
+  }
   document.getElementById('checkoutModal').style.display = 'flex';
   document.getElementById('checkoutNote').textContent = '';
 }
@@ -275,24 +347,42 @@ document.getElementById('checkoutForm').addEventListener('submit', async (e) => 
   const payload = {
     customer_name: document.getElementById('co_name').value,
     customer_email: document.getElementById('co_email').value,
+    address: document.getElementById('co_address').value,
+    pincode: document.getElementById('co_pincode').value,
+    landmark: document.getElementById('co_landmark').value,
+    preferred_time: document.getElementById('co_time').value,
     items: cart.map(i => ({ name: i.name, price: i.price, quantity: i.quantity })),
   };
   note.textContent = 'Processing payment (test mode)…';
   await new Promise(r => setTimeout(r, 900)); // simulate payment delay
   try{
+    const c = getCustomer();
+    const headers = {'Content-Type':'application/json'};
+    if (c) headers['Authorization'] = 'Bearer ' + c.token;
     const res = await fetch(API + '/api/orders', {
-      method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(payload)
+      method: 'POST', headers, body: JSON.stringify(payload)
     });
-    if (!res.ok) throw new Error('failed');
-    note.textContent = '✅ Payment successful (test) — thank you!';
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'failed');
     cart = [];
     updateCartBadge();
-    setTimeout(closeCheckout, 1800);
     e.target.reset();
+    showOrderConfirmation(data.order);
   }catch(err){
-    note.textContent = 'Something went wrong — please try again.';
+    note.textContent = err.message || 'Something went wrong — please try again.';
   }
 });
+
+function showOrderConfirmation(order){
+  closeCheckout();
+  document.getElementById('confirmOrderId').textContent = '#' + order.id;
+  document.getElementById('confirmDetails').textContent =
+    `${order.customer_name} · ₹${Number(order.total).toFixed(0)} · Delivery: ${order.preferred_time || 'Anytime'}`;
+  document.getElementById('confirmModal').style.display = 'flex';
+}
+function closeConfirm(){
+  document.getElementById('confirmModal').style.display = 'none';
+}
 
 document.getElementById('contactForm').addEventListener('submit', async (e) => {
   e.preventDefault();
@@ -317,6 +407,7 @@ document.getElementById('contactForm').addEventListener('submit', async (e) => {
 
 loadContent();
 loadProducts();
+initAuth();
 
 // Log a visit once per browser session
 try {
@@ -325,6 +416,100 @@ try {
     sessionStorage.setItem('bb_visit_logged', '1');
   }
 } catch(e) {}
+
+// ---- CUSTOMER AUTH ----
+function getCustomer(){
+  try{
+    const raw = localStorage.getItem('bb_customer');
+    return raw ? JSON.parse(raw) : null;
+  }catch(e){ return null; }
+}
+function setCustomer(data){
+  try{ localStorage.setItem('bb_customer', JSON.stringify(data)); }catch(e){}
+  renderAuthArea();
+}
+function clearCustomer(){
+  try{ localStorage.removeItem('bb_customer'); }catch(e){}
+  renderAuthArea();
+}
+function initAuth(){ renderAuthArea(); }
+function renderAuthArea(){
+  const area = document.getElementById('authArea');
+  const c = getCustomer();
+  if (c){
+    area.innerHTML = `<span class="auth-hi">Hi, ${esc(c.name)}</span>
+      <button type="button" class="btn btn-ghost btn-sm" onclick="openMyOrders()">My orders</button>
+      <button type="button" class="btn btn-ghost btn-sm" onclick="clearCustomer()">Log out</button>`;
+  } else {
+    area.innerHTML = `<button type="button" class="btn btn-ghost btn-sm" onclick="openModal('signInModal')">Sign in</button>
+      <button type="button" class="btn btn-primary btn-sm" onclick="openModal('signUpModal')">Sign up</button>`;
+  }
+}
+function openModal(id){ document.getElementById(id).style.display = 'flex'; }
+function closeModal(id){ document.getElementById(id).style.display = 'none'; }
+function switchModal(from, to){ closeModal(from); openModal(to); }
+
+document.getElementById('signUpForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const note = document.getElementById('signUpNote');
+  note.textContent = 'Creating account…';
+  try{
+    const res = await fetch(API + '/api/customer-auth/signup', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({
+        name: document.getElementById('su_name').value,
+        email: document.getElementById('su_email').value,
+        password: document.getElementById('su_password').value,
+      })
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Could not sign up');
+    setCustomer({ token: data.token, name: data.name, email: data.email });
+    closeModal('signUpModal');
+    e.target.reset();
+  }catch(err){ note.textContent = err.message; }
+});
+
+document.getElementById('signInForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const note = document.getElementById('signInNote');
+  note.textContent = 'Signing in…';
+  try{
+    const res = await fetch(API + '/api/customer-auth/login', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({
+        email: document.getElementById('si_email').value,
+        password: document.getElementById('si_password').value,
+      })
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Could not sign in');
+    setCustomer({ token: data.token, name: data.name, email: data.email });
+    closeModal('signInModal');
+    e.target.reset();
+  }catch(err){ note.textContent = err.message; }
+});
+
+async function openMyOrders(){
+  openModal('myOrdersModal');
+  const wrap = document.getElementById('myOrdersList');
+  wrap.innerHTML = '<p class="muted">Loading…</p>';
+  const c = getCustomer();
+  if (!c) return;
+  try{
+    const res = await fetch(API + '/api/customer-auth/my-orders', { headers: { 'Authorization': 'Bearer ' + c.token } });
+    const orders = await res.json();
+    if (!res.ok) throw new Error(orders.error || 'Could not load orders');
+    if (!orders.length){ wrap.innerHTML = '<p class="muted">No orders yet.</p>'; return; }
+    wrap.innerHTML = orders.map(o => {
+      const items = (o.items||[]).map(i => `${esc(i.name)} ×${i.quantity}`).join(', ');
+      return `<div class="cart-row" style="grid-template-columns:1fr auto;">
+        <span><strong>#${o.id}</strong> — ${items}<br><span class="muted">${new Date(o.created_at).toLocaleDateString()} · ${esc(o.preferred_time||'Anytime')}</span></span>
+        <span class="cart-row-price">₹${Number(o.total).toFixed(0)}</span>
+      </div>`;
+    }).join('');
+  }catch(err){ wrap.innerHTML = `<p class="muted">${esc(err.message)}</p>`; }
+}
 </script>
 </body>
 </html>

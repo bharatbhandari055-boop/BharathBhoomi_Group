@@ -70,12 +70,30 @@ async function initSchema() {
       id SERIAL PRIMARY KEY,
       customer_name TEXT NOT NULL,
       customer_email TEXT NOT NULL,
+      address TEXT DEFAULT '',
+      pincode TEXT DEFAULT '',
+      landmark TEXT DEFAULT '',
+      preferred_time TEXT DEFAULT '',
       items JSONB NOT NULL,
       total NUMERIC NOT NULL DEFAULT 0,
       status TEXT DEFAULT 'paid',
       created_at TIMESTAMPTZ DEFAULT now()
     );
   `);
+  await pool.query(`ALTER TABLE orders ADD COLUMN IF NOT EXISTS address TEXT DEFAULT '';`);
+  await pool.query(`ALTER TABLE orders ADD COLUMN IF NOT EXISTS pincode TEXT DEFAULT '';`);
+  await pool.query(`ALTER TABLE orders ADD COLUMN IF NOT EXISTS landmark TEXT DEFAULT '';`);
+  await pool.query(`ALTER TABLE orders ADD COLUMN IF NOT EXISTS preferred_time TEXT DEFAULT '';`);
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS customer_accounts (
+      id SERIAL PRIMARY KEY,
+      name TEXT NOT NULL,
+      email TEXT UNIQUE NOT NULL,
+      password_hash TEXT NOT NULL,
+      created_at TIMESTAMPTZ DEFAULT now()
+    );
+  `);
+  await pool.query(`ALTER TABLE orders ADD COLUMN IF NOT EXISTS customer_account_id INT REFERENCES customer_accounts(id);`);
   await pool.query(`
     CREATE TABLE IF NOT EXISTS visits (
       day DATE PRIMARY KEY,

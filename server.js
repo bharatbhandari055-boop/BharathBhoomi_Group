@@ -9,6 +9,7 @@ app.use(cors());
 app.use(express.json({ limit: '8mb' })); // allow base64 hero image uploads
 
 app.use('/api/auth', require('./routes/auth'));
+app.use('/api/customer-auth', require('./routes/customerAuth'));
 app.use('/api/content', require('./routes/content'));
 app.use('/api/products', require('./routes/products'));
 app.use('/api/customers', require('./routes/customers'));

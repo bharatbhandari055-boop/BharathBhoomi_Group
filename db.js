@@ -1,4 +1,5 @@
 const { Pool } = require('pg');
+const bcrypt = require('bcryptjs');
 
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
@@ -70,6 +71,19 @@ async function initSchema() {
        ('Seasonal produce', '🥬', 'Fruits and vegetables grown in step with the seasons.', 2),
        ('Farm essentials', '🍯', 'Cold-pressed oils, raw honey, and other pantry staples.', 3)`
     );
+  }
+
+  // Auto-create/update the admin login from environment variables — no shell access needed.
+  const adminUsername = process.env.ADMIN_USERNAME;
+  const adminPassword = process.env.ADMIN_PASSWORD;
+  if (adminUsername && adminPassword) {
+    const hash = await bcrypt.hash(adminPassword, 10);
+    await pool.query(
+      `INSERT INTO admin_users (username, password_hash, role) VALUES ($1,$2,'admin')
+       ON CONFLICT (username) DO UPDATE SET password_hash = $2`,
+      [adminUsername, hash]
+    );
+    console.log(`Admin user "${adminUsername}" is ready.`);
   }
 }
 

@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Bharath Bhoomi — Naturally Grown, Honestly Good</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=Karla:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --cream:#FBF6EA; --cream-2:#F3ECD9; --leaf:#4A7C3C; --leaf-dark:#345B2A;
+    --turmeric:#E8A93B; --soil:#5B3A24; --chili:#D2542E; --card:#FFFDF7;
+    --ring: rgba(74,124,60,0.35); --max: 1120px;
+  }
+  *{box-sizing:border-box;} html{scroll-behavior:smooth;}
+  body{ margin:0; background:var(--cream); color:var(--soil); font-family:'Karla', sans-serif; line-height:1.55; }
+  img{max-width:100%;display:block;}
+  h1,h2,h3{ font-family:'Fredoka', sans-serif; font-weight:600; margin:0 0 .4em 0; color:var(--leaf-dark); line-height:1.12; }
+  .wrap{max-width:var(--max); margin:0 auto; padding:0 28px;}
+  header{ position:sticky; top:0; z-index:50; background:rgba(251,246,234,0.92); backdrop-filter:blur(6px); border-bottom:2px solid var(--cream-2); }
+  nav.wrap{ display:flex; align-items:center; justify-content:space-between; padding:16px 28px; }
+  .brand{ display:flex; align-items:center; gap:10px; font-family:'Fredoka', sans-serif; font-weight:700; font-size:1.3rem; color:var(--leaf-dark); text-decoration:none; }
+  .brand .mark{ width:38px;height:38px;border-radius:50%; background:var(--leaf); color:white; display:flex;align-items:center;justify-content:center; font-size:.85rem; font-weight:700; }
+  .navlinks{display:flex; gap:8px; list-style:none; margin:0; padding:0;}
+  .navlinks a{ text-decoration:none; font-weight:600; padding:9px 16px; border-radius:100px; color:var(--soil); font-size:.98rem; }
+  .navlinks a:hover{background:var(--leaf); color:white;}
+  .hero{ padding:76px 0 110px; }
+  .hero-grid{ display:grid; grid-template-columns:1.1fr .9fr; gap:56px; align-items:center; }
+  .eyebrow-badge{ display:inline-flex; align-items:center; gap:8px; background:var(--card); border:2px dashed var(--leaf); padding:7px 16px; border-radius:100px; font-weight:700; color:var(--leaf-dark); font-size:.9rem; margin-bottom:22px; }
+  .hero h1{ font-size:clamp(2.4rem, 5vw, 3.6rem); letter-spacing:-.01em; }
+  .hero h1 .swirl{ color:var(--leaf-dark); font-weight:700; }
+  .hero p.lead{ font-size:1.18rem; max-width:46ch; margin:18px 0 30px; color:#4a3521; }
+  .cta-row{display:flex; gap:14px; flex-wrap:wrap;}
+  .btn{ display:inline-block; padding:14px 26px; border-radius:100px; font-weight:700; text-decoration:none; font-size:1rem; border:2px solid transparent; cursor:pointer; }
+  .btn-primary{background:var(--leaf); color:white; box-shadow:0 6px 0 var(--leaf-dark);}
+  .btn-ghost{background:transparent; border-color:var(--soil); color:var(--soil);}
+  .plate{ width:100%; max-width:420px; aspect-ratio:4/3; background:var(--turmeric); border-radius:32px; display:flex; align-items:center; justify-content:center; overflow:hidden; box-shadow: 0 18px 40px rgba(91,58,36,0.22); border:8px solid var(--card); transform:rotate(-3deg); transition:transform .3s ease; }
+  .plate:hover{transform:rotate(0deg);}
+  .plate img{ width:100%; height:100%; object-fit:cover; }
+  .section{padding:96px 0;}
+  .section-head{max-width:640px; margin-bottom:52px;}
+  .divider{ width:70px; height:6px; border-radius:10px; background:var(--chili); margin-bottom:18px; }
+  .about{background:var(--cream-2);}
+  .about-grid{ display:grid; grid-template-columns:.85fr 1.15fr; gap:60px; align-items:center; }
+  .about-visual{ background:var(--leaf); border-radius:34px; padding:40px; color:white; }
+  .about-visual h3{color:white;}
+  .about-visual p{color:#e7f0e2; margin:0;}
+  .tag-list{display:flex; flex-wrap:wrap; gap:10px; margin-top:22px;}
+  .tag{ background:var(--turmeric); color:var(--soil); font-weight:700; padding:8px 16px; border-radius:100px; font-size:.88rem; }
+  .services-grid{ display:grid; grid-template-columns:repeat(3, 1fr); gap:28px; }
+  .service-card{ background:var(--card); border-radius:28px; padding:32px 26px; box-shadow:0 10px 24px rgba(91,58,36,0.09); border-bottom:6px solid var(--leaf); }
+  .service-icon{ width:58px; height:58px; border-radius:16px; background:var(--cream-2); display:flex; align-items:center; justify-content:center; font-size:1.7rem; margin-bottom:18px; }
+  .service-card h3{font-size:1.25rem;}
+  .service-card p{margin:0; color:#4a3521; font-size:.98rem;}
+  .contact{background:var(--soil); color:var(--cream);}
+  .contact .divider{background:var(--turmeric);}
+  .contact .section-head h2{color:var(--cream);}
+  .contact-grid{ display:grid; grid-template-columns:1fr 1fr; gap:56px; align-items:start; }
+  .contact-info{display:flex; flex-direction:column; gap:18px;}
+  .info-row{display:flex; gap:14px; align-items:flex-start;}
+  .info-row .ic{ width:40px;height:40px;border-radius:50%; background:var(--leaf); display:flex; align-items:center; justify-content:center; flex-shrink:0; font-size:1.1rem; }
+  .info-row strong{display:block; font-family:'Fredoka'; font-size:1rem; color:var(--turmeric);}
+  form{ background:var(--card); border-radius:28px; padding:34px; display:flex; flex-direction:column; gap:16px; }
+  .field label{ display:block; font-weight:700; color:var(--leaf-dark); margin-bottom:6px; font-size:.92rem; }
+  .field input, .field textarea{ width:100%; padding:13px 16px; border-radius:14px; border:2px solid var(--cream-2); font-family:'Karla'; font-size:1rem; background:var(--cream); color:var(--soil); resize:vertical; }
+  .field input:focus, .field textarea:focus{ outline:none; border-color:var(--leaf); box-shadow:0 0 0 4px var(--ring); }
+  .form-note{font-size:.85rem; color:#6b7a63;}
+  .service-card .price{ font-family:'Fredoka'; font-weight:700; color:var(--chili); font-size:1.15rem; margin:6px 0 12px; }
+  .service-card .btn-buy{ width:100%; text-align:center; padding:10px 20px; font-size:.9rem; }
+  .modal-overlay{ display:none; position:fixed; inset:0; background:rgba(91,58,36,0.45); z-index:100; align-items:center; justify-content:center; padding:20px; }
+  .modal-box{ background:var(--card); border-radius:24px; padding:32px; max-width:420px; width:100%; position:relative; }
+  .modal-close{ position:absolute; top:14px; right:16px; background:none; border:none; font-size:1.5rem; color:var(--soil); cursor:pointer; }
+  footer{ background:var(--soil); color:#c9bda6; text-align:center; padding:26px 0; font-size:.9rem; }
+  footer .mark-mini{color:var(--turmeric); font-weight:700;}
+  @media (max-width: 880px){ .hero-grid, .about-grid, .contact-grid{grid-template-columns:1fr;} .services-grid{grid-template-columns:1fr;} .navlinks{display:none;} }
+</style>
+</head>
+<body>
+
+<header><nav class="wrap">
+  <a href="#home" class="brand"><span class="mark">BB</span> Bharath Bhoomi</a>
+  <ul class="navlinks"><li><a href="#home">Home</a></li><li><a href="#about">About</a></li><li><a href="#services">Products</a></li><li><a href="#contact">Contact</a></li></ul>
+</nav></header>
+
+<section class="hero" id="home"><div class="wrap hero-grid">
+  <div>
+    <span class="eyebrow-badge" id="fBadge">🌾 Grown with care</span>
+    <h1 id="fHeading">Real food, straight from Bharath Bhoomi.</h1>
+    <p class="lead" id="fLead"></p>
+    <div class="cta-row"><a href="#services" class="btn btn-primary">See our products</a><a href="#contact" class="btn btn-ghost">Get in touch</a></div>
+  </div>
+  <div><div class="plate" id="heroPlate"></div></div>
+</div></section>
+
+<section class="section about" id="about"><div class="wrap about-grid">
+  <div class="about-visual"><h3>Why "Bharath Bhoomi"?</h3><p>It means "the land of India" — a reminder that good food starts with good soil.</p></div>
+  <div>
+    <div class="divider"></div>
+    <h2 id="fAboutHeading"></h2>
+    <p id="fAboutP1"></p>
+    <p id="fAboutP2"></p>
+    <div class="tag-list" id="fTags"></div>
+  </div>
+</div></section>
+
+<section class="section" id="services"><div class="wrap">
+  <div class="section-head"><div class="divider"></div><h2>What we grow &amp; offer</h2></div>
+  <div class="services-grid" id="fProducts"></div>
+</div></section>
+
+<section class="section contact" id="contact"><div class="wrap">
+  <div class="section-head"><div class="divider"></div><h2>Let's talk food &amp; farming</h2></div>
+  <div class="contact-grid">
+    <div class="contact-info">
+      <div class="info-row"><div class="ic">📍</div><div><strong>Where we are</strong><span id="fLocation"></span></div></div>
+      <div class="info-row"><div class="ic">✉️</div><div><strong>Email us</strong><span id="fEmail"></span></div></div>
+      <div class="info-row"><div class="ic">📞</div><div><strong>Call us</strong><span id="fPhone"></span></div></div>
+    </div>
+    <form id="contactForm">
+      <div class="field"><label>Your name</label><input id="in_name" required></div>
+      <div class="field"><label>Email or phone</label><input id="in_contact" required></div>
+      <div class="field"><label>Message</label><textarea id="in_message" rows="4"></textarea></div>
+      <button type="submit" class="btn btn-primary">Send message</button>
+      <span class="form-note" id="formNote">We usually reply within a day.</span>
+    </form>
+  </div>
+</div></section>
+
+<footer><div class="wrap"><span class="mark-mini">Bharath Bhoomi</span> · Naturally grown, honestly good · © 2026</div></footer>
+
+<div class="modal-overlay" id="checkoutModal">
+  <div class="modal-box">
+    <button type="button" class="modal-close" onclick="closeCheckout()">×</button>
+    <h3>Checkout <span style="font-size:.7em; color:var(--chili); font-weight:700;">(Test mode — no real payment)</span></h3>
+    <p id="checkoutProductName" style="font-weight:700; color:var(--leaf-dark);"></p>
+    <form id="checkoutForm">
+      <div class="field"><label>Your name</label><input id="co_name" required></div>
+      <div class="field"><label>Email</label><input id="co_email" type="email" required></div>
+      <div class="field"><label>Quantity</label><input id="co_qty" type="number" min="1" value="1" required></div>
+      <button type="submit" class="btn btn-primary">Pay now (test)</button>
+      <span class="form-note" id="checkoutNote"></span>
+    </form>
+  </div>
+</div>
+
+<script>
+// Same-origin API — works because this page is served by the same server as /api
+const API = '';
+
+function esc(s){ return String(s == null ? '' : s); }
+
+async function loadContent(){
+  try{
+    const res = await fetch(API + '/api/content');
+    const c = await res.json();
+    document.getElementById('fBadge').textContent = c.badge || '';
+    document.getElementById('fHeading').textContent = c.heading || '';
+    document.getElementById('fLead').textContent = c.lead || '';
+    document.getElementById('fAboutHeading').textContent = c.aboutHeading || '';
+    document.getElementById('fAboutP1').textContent = c.aboutP1 || '';
+    document.getElementById('fAboutP2').textContent = c.aboutP2 || '';
+    document.getElementById('fLocation').textContent = c.location || '';
+    document.getElementById('fEmail').textContent = c.email || '';
+    document.getElementById('fPhone').textContent = c.phone || '';
+    const tagWrap = document.getElementById('fTags');
+    tagWrap.innerHTML = '';
+    (c.tags||[]).forEach(t => {
+      const span = document.createElement('span');
+      span.className = 'tag'; span.textContent = t;
+      tagWrap.appendChild(span);
+    });
+    const plate = document.getElementById('heroPlate');
+    plate.innerHTML = c.heroImage ? `<img src="${c.heroImage}" alt="">` : '';
+  }catch(e){ console.error('Could not load content', e); }
+}
+
+async function loadProducts(){
+  try{
+    const res = await fetch(API + '/api/products');
+    const products = await res.json();
+    const wrap = document.getElementById('fProducts');
+    wrap.innerHTML = '';
+    products.forEach(p => {
+      const card = document.createElement('div');
+      card.className = 'service-card';
+      card.innerHTML = `<div class="service-icon">${esc(p.icon)}</div><h3></h3><p></p><div class="price"></div><button type="button" class="btn btn-primary btn-buy">Buy now</button>`;
+      card.querySelector('h3').textContent = p.name;
+      card.querySelector('p').textContent = p.description;
+      card.querySelector('.price').textContent = '₹' + Number(p.price || 0).toFixed(0);
+      card.querySelector('.btn-buy').onclick = () => openCheckout(p);
+      wrap.appendChild(card);
+    });
+  }catch(e){ console.error('Could not load products', e); }
+}
+
+let checkoutProduct = null;
+function openCheckout(p){
+  checkoutProduct = p;
+  document.getElementById('checkoutProductName').textContent = p.name + ' — ₹' + Number(p.price||0).toFixed(0);
+  document.getElementById('checkoutModal').style.display = 'flex';
+  document.getElementById('checkoutNote').textContent = '';
+}
+function closeCheckout(){
+  document.getElementById('checkoutModal').style.display = 'none';
+}
+document.getElementById('checkoutForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const note = document.getElementById('checkoutNote');
+  const qty = Math.max(1, parseInt(document.getElementById('co_qty').value || '1', 10));
+  const payload = {
+    customer_name: document.getElementById('co_name').value,
+    customer_email: document.getElementById('co_email').value,
+    items: [{ name: checkoutProduct.name, price: checkoutProduct.price, quantity: qty }],
+  };
+  note.textContent = 'Processing payment (test mode)…';
+  await new Promise(r => setTimeout(r, 900)); // simulate payment delay
+  try{
+    const res = await fetch(API + '/api/orders', {
+      method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(payload)
+    });
+    if (!res.ok) throw new Error('failed');
+    note.textContent = '✅ Payment successful (test) — thank you!';
+    setTimeout(closeCheckout, 1800);
+    e.target.reset();
+  }catch(err){
+    note.textContent = 'Something went wrong — please try again.';
+  }
+});
+
+document.getElementById('contactForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const note = document.getElementById('formNote');
+  const payload = {
+    name: document.getElementById('in_name').value,
+    contact: document.getElementById('in_contact').value,
+    message: document.getElementById('in_message').value,
+  };
+  note.textContent = 'Sending…';
+  try{
+    const res = await fetch(API + '/api/customers/contact', {
+      method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(payload)
+    });
+    if (!res.ok) throw new Error('failed');
+    note.textContent = 'Thanks! We will get back to you soon.';
+    e.target.reset();
+  }catch(err){
+    note.textContent = "Something went wrong — please try again or email us directly.";
+  }
+});
+
+loadContent();
+loadProducts();
+
+// Log a visit once per browser session
+try {
+  if (!sessionStorage.getItem('bb_visit_logged')) {
+    fetch(API + '/api/analytics/visit', { method: 'POST' }).catch(()=>{});
+    sessionStorage.setItem('bb_visit_logged', '1');
+  }
+} catch(e) {}
+</script>
+</body>
+</html>

@@ -21,10 +21,12 @@ async function initSchema() {
       name TEXT NOT NULL,
       icon TEXT DEFAULT '🌿',
       description TEXT DEFAULT '',
+      price NUMERIC DEFAULT 0,
       sort_order INT DEFAULT 0,
       created_at TIMESTAMPTZ DEFAULT now()
     );
   `);
+  await pool.query(`ALTER TABLE products ADD COLUMN IF NOT EXISTS price NUMERIC DEFAULT 0;`);
   await pool.query(`
     CREATE TABLE IF NOT EXISTS customers (
       id SERIAL PRIMARY KEY,
@@ -63,13 +65,31 @@ async function initSchema() {
     [JSON.stringify(defaultContent)]
   );
 
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS orders (
+      id SERIAL PRIMARY KEY,
+      customer_name TEXT NOT NULL,
+      customer_email TEXT NOT NULL,
+      items JSONB NOT NULL,
+      total NUMERIC NOT NULL DEFAULT 0,
+      status TEXT DEFAULT 'paid',
+      created_at TIMESTAMPTZ DEFAULT now()
+    );
+  `);
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS visits (
+      day DATE PRIMARY KEY,
+      count INT DEFAULT 0
+    );
+  `);
+
   const { rows } = await pool.query('SELECT COUNT(*)::int AS n FROM products');
   if (rows[0].n === 0) {
     await pool.query(
-      `INSERT INTO products (name, icon, description, sort_order) VALUES
-       ('Naturally grown grains', '🌾', 'Millets, rice and wheat grown without synthetic inputs, sourced directly from small farms.', 1),
-       ('Seasonal produce', '🥬', 'Fruits and vegetables grown in step with the seasons.', 2),
-       ('Farm essentials', '🍯', 'Cold-pressed oils, raw honey, and other pantry staples.', 3)`
+      `INSERT INTO products (name, icon, description, price, sort_order) VALUES
+       ('Naturally grown grains', '🌾', 'Millets, rice and wheat grown without synthetic inputs, sourced directly from small farms.', 249, 1),
+       ('Seasonal produce', '🥬', 'Fruits and vegetables grown in step with the seasons.', 149, 2),
+       ('Farm essentials', '🍯', 'Cold-pressed oils, raw honey, and other pantry staples.', 399, 3)`
     );
   }
 

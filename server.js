@@ -12,6 +12,8 @@ app.use('/api/auth', require('./routes/auth'));
 app.use('/api/content', require('./routes/content'));
 app.use('/api/products', require('./routes/products'));
 app.use('/api/customers', require('./routes/customers'));
+app.use('/api/orders', require('./routes/orders'));
+app.use('/api/analytics', require('./routes/analytics'));
 
 // Serve the public site at "/"
 app.use(express.static(path.join(__dirname, 'public')));

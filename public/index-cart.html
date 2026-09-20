@@ -68,6 +68,13 @@
   .form-note{font-size:.85rem; color:#6b7a63;}
   .service-card .price{ font-family:'Fredoka'; font-weight:700; color:var(--chili); font-size:1.15rem; margin:6px 0 12px; }
   .service-card .btn-buy{ width:100%; text-align:center; padding:10px 20px; font-size:.9rem; }
+  .cart-btn{ background:var(--card); border:2px solid var(--leaf); border-radius:100px; padding:9px 16px; font-size:1.1rem; cursor:pointer; position:relative; }
+  .cart-badge{ position:absolute; top:-6px; right:-6px; background:var(--chili); color:#fff; font-size:.7rem; font-weight:700; border-radius:100px; width:20px; height:20px; align-items:center; justify-content:center; }
+  .cart-row{ display:grid; grid-template-columns:1fr auto auto auto auto auto; gap:8px; align-items:center; padding:10px 0; border-bottom:1px solid var(--cream-2); font-size:.9rem; }
+  .cart-row-name{ font-weight:700; color:var(--leaf-dark); }
+  .cart-row-price{ font-weight:700; }
+  .cart-qty-btn{ width:26px; height:26px; border-radius:50%; border:2px solid var(--cream-2); background:var(--cream); cursor:pointer; font-weight:700; }
+  .cart-remove{ background:none; border:none; color:var(--chili); font-size:1.2rem; cursor:pointer; }
   .modal-overlay{ display:none; position:fixed; inset:0; background:rgba(91,58,36,0.45); z-index:100; align-items:center; justify-content:center; padding:20px; }
   .modal-box{ background:var(--card); border-radius:24px; padding:32px; max-width:420px; width:100%; position:relative; }
   .modal-close{ position:absolute; top:14px; right:16px; background:none; border:none; font-size:1.5rem; color:var(--soil); cursor:pointer; }
@@ -81,6 +88,7 @@
 <header><nav class="wrap">
   <a href="#home" class="brand"><span class="mark">BB</span> Bharath Bhoomi</a>
   <ul class="navlinks"><li><a href="#home">Home</a></li><li><a href="#about">About</a></li><li><a href="#services">Products</a></li><li><a href="#contact">Contact</a></li></ul>
+  <button type="button" class="cart-btn" onclick="openCart()">🛒 <span id="cartBadge" class="cart-badge" style="display:none;">0</span></button>
 </nav></header>
 
 <section class="hero" id="home"><div class="wrap hero-grid">
@@ -129,15 +137,24 @@
 
 <footer><div class="wrap"><span class="mark-mini">Bharath Bhoomi</span> · Naturally grown, honestly good · © 2026</div></footer>
 
+<div class="modal-overlay" id="cartModal">
+  <div class="modal-box">
+    <button type="button" class="modal-close" onclick="closeCart()">×</button>
+    <h3>Your cart</h3>
+    <div id="cartItems"></div>
+    <p id="cartTotal" style="font-weight:700; color:var(--chili); margin:14px 0;"></p>
+    <button type="button" class="btn btn-primary" style="width:100%; text-align:center;" onclick="goToCheckout()">Checkout</button>
+  </div>
+</div>
+
 <div class="modal-overlay" id="checkoutModal">
   <div class="modal-box">
     <button type="button" class="modal-close" onclick="closeCheckout()">×</button>
     <h3>Checkout <span style="font-size:.7em; color:var(--chili); font-weight:700;">(Test mode — no real payment)</span></h3>
-    <p id="checkoutProductName" style="font-weight:700; color:var(--leaf-dark);"></p>
+    <p id="checkoutSummary" style="font-weight:700; color:var(--leaf-dark);"></p>
     <form id="checkoutForm">
       <div class="field"><label>Your name</label><input id="co_name" required></div>
       <div class="field"><label>Email</label><input id="co_email" type="email" required></div>
-      <div class="field"><label>Quantity</label><input id="co_qty" type="number" min="1" value="1" required></div>
       <button type="submit" class="btn btn-primary">Pay now (test)</button>
       <span class="form-note" id="checkoutNote"></span>
     </form>
@@ -179,25 +196,73 @@ async function loadProducts(){
   try{
     const res = await fetch(API + '/api/products');
     const products = await res.json();
+    window.__products = products;
     const wrap = document.getElementById('fProducts');
     wrap.innerHTML = '';
     products.forEach(p => {
       const card = document.createElement('div');
       card.className = 'service-card';
-      card.innerHTML = `<div class="service-icon">${esc(p.icon)}</div><h3></h3><p></p><div class="price"></div><button type="button" class="btn btn-primary btn-buy">Buy now</button>`;
+      card.innerHTML = `<div class="service-icon">${esc(p.icon)}</div><h3></h3><p></p><div class="price"></div><button type="button" class="btn btn-primary btn-buy">Add to cart</button>`;
       card.querySelector('h3').textContent = p.name;
       card.querySelector('p').textContent = p.description;
       card.querySelector('.price').textContent = '₹' + Number(p.price || 0).toFixed(0);
-      card.querySelector('.btn-buy').onclick = () => openCheckout(p);
+      card.querySelector('.btn-buy').onclick = () => addToCart(p);
       wrap.appendChild(card);
     });
   }catch(e){ console.error('Could not load products', e); }
 }
 
-let checkoutProduct = null;
-function openCheckout(p){
-  checkoutProduct = p;
-  document.getElementById('checkoutProductName').textContent = p.name + ' — ₹' + Number(p.price||0).toFixed(0);
+// ---- CART ----
+let cart = [];
+function addToCart(p){
+  const existing = cart.find(i => i.name === p.name);
+  if (existing) existing.quantity += 1;
+  else cart.push({ name: p.name, price: Number(p.price)||0, quantity: 1 });
+  updateCartBadge();
+  openCart();
+}
+function updateCartBadge(){
+  const count = cart.reduce((s,i)=>s+i.quantity, 0);
+  const badge = document.getElementById('cartBadge');
+  badge.textContent = count;
+  badge.style.display = count ? 'inline-flex' : 'none';
+}
+function cartTotal(){
+  return cart.reduce((s,i)=> s + i.price*i.quantity, 0);
+}
+function renderCart(){
+  const wrap = document.getElementById('cartItems');
+  if (!cart.length){ wrap.innerHTML = '<p class="muted">Your cart is empty.</p>'; document.getElementById('cartTotal').textContent=''; return; }
+  wrap.innerHTML = '';
+  cart.forEach((item, idx) => {
+    const row = document.createElement('div');
+    row.className = 'cart-row';
+    row.innerHTML = `
+      <span class="cart-row-name">${esc(item.name)}</span>
+      <button type="button" class="cart-qty-btn" data-act="dec">−</button>
+      <span>${item.quantity}</span>
+      <button type="button" class="cart-qty-btn" data-act="inc">+</button>
+      <span class="cart-row-price">₹${(item.price*item.quantity).toFixed(0)}</span>
+      <button type="button" class="cart-remove" data-act="rm">×</button>`;
+    row.querySelector('[data-act="inc"]').onclick = () => { item.quantity++; renderCart(); updateCartBadge(); };
+    row.querySelector('[data-act="dec"]').onclick = () => { item.quantity = Math.max(1, item.quantity-1); renderCart(); updateCartBadge(); };
+    row.querySelector('[data-act="rm"]').onclick = () => { cart.splice(idx,1); renderCart(); updateCartBadge(); };
+    wrap.appendChild(row);
+  });
+  document.getElementById('cartTotal').textContent = 'Total: ₹' + cartTotal().toFixed(0);
+}
+function openCart(){
+  renderCart();
+  document.getElementById('cartModal').style.display = 'flex';
+}
+function closeCart(){
+  document.getElementById('cartModal').style.display = 'none';
+}
+function goToCheckout(){
+  if (!cart.length) return;
+  closeCart();
+  document.getElementById('checkoutSummary').textContent =
+    cart.map(i => `${i.name} ×${i.quantity}`).join(', ') + ' — ₹' + cartTotal().toFixed(0);
   document.getElementById('checkoutModal').style.display = 'flex';
   document.getElementById('checkoutNote').textContent = '';
 }
@@ -207,11 +272,10 @@ function closeCheckout(){
 document.getElementById('checkoutForm').addEventListener('submit', async (e) => {
   e.preventDefault();
   const note = document.getElementById('checkoutNote');
-  const qty = Math.max(1, parseInt(document.getElementById('co_qty').value || '1', 10));
   const payload = {
     customer_name: document.getElementById('co_name').value,
     customer_email: document.getElementById('co_email').value,
-    items: [{ name: checkoutProduct.name, price: checkoutProduct.price, quantity: qty }],
+    items: cart.map(i => ({ name: i.name, price: i.price, quantity: i.quantity })),
   };
   note.textContent = 'Processing payment (test mode)…';
   await new Promise(r => setTimeout(r, 900)); // simulate payment delay
@@ -221,6 +285,8 @@ document.getElementById('checkoutForm').addEventListener('submit', async (e) => 
     });
     if (!res.ok) throw new Error('failed');
     note.textContent = '✅ Payment successful (test) — thank you!';
+    cart = [];
+    updateCartBadge();
     setTimeout(closeCheckout, 1800);
     e.target.reset();
   }catch(err){

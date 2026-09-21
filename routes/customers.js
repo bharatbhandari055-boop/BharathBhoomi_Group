@@ -11,7 +11,16 @@ router.get('/', requireAuth, async (req, res) => {
   );
   res.json(rows);
 });
-
+// Public contact form (no auth required)
+router.post('/contact', async (req, res) => {
+  const { name, contact, message } = req.body || {};
+  if (!name) return res.status(400).json({ error: 'Name is required' });
+  const { rows } = await pool.query(
+    `INSERT INTO customers (name, contact, message, source) VALUES ($1,$2,$3,'contact-form') RETURNING *`,
+    [name, contact || '', message || '']
+  );
+  res.status(201).json(rows[0]);
+});
 // Add a new customer entry (admin only)
 router.post('/', requireAuth, async (req, res) => {
   const { name, contact, message } = req.body || {};

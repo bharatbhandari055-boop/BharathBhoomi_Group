@@ -19,7 +19,7 @@
   h1,h2,h3{ font-family:'Fredoka', sans-serif; font-weight:600; margin:0 0 .4em 0; color:var(--leaf-dark); line-height:1.12; }
   .wrap{max-width:var(--max); margin:0 auto; padding:0 28px;}
   header{ position:sticky; top:0; z-index:50; background:rgba(251,246,234,0.92); backdrop-filter:blur(6px); border-bottom:2px solid var(--cream-2); }
-  nav.wrap{ display:flex; align-items:center; justify-content:space-between; padding:16px 28px; }
+  nav.wrap{ display:flex; align-items:center; justify-content:space-between; padding:16px 28px; flex-wrap:wrap; gap:10px; }
   .brand{ display:flex; align-items:center; gap:10px; font-family:'Fredoka', sans-serif; font-weight:700; font-size:1.3rem; color:var(--leaf-dark); text-decoration:none; }
   .brand .mark{ width:38px;height:38px;border-radius:50%; background:var(--leaf); color:white; display:flex;align-items:center;justify-content:center; font-size:.85rem; font-weight:700; }
   .navlinks{display:flex; gap:8px; list-style:none; margin:0; padding:0;}
@@ -35,6 +35,7 @@
   .btn{ display:inline-block; padding:14px 26px; border-radius:100px; font-weight:700; text-decoration:none; font-size:1rem; border:2px solid transparent; cursor:pointer; }
   .btn-primary{background:var(--leaf); color:white; box-shadow:0 6px 0 var(--leaf-dark);}
   .btn-ghost{background:transparent; border-color:var(--soil); color:var(--soil);}
+  .btn-sm{ padding:8px 16px; font-size:.85rem; }
   .plate{ width:100%; max-width:420px; aspect-ratio:4/3; background:var(--turmeric); border-radius:32px; display:flex; align-items:center; justify-content:center; overflow:hidden; box-shadow: 0 18px 40px rgba(91,58,36,0.22); border:8px solid var(--card); transform:rotate(-3deg); transition:transform .3s ease; }
   .plate:hover{transform:rotate(0deg);}
   .plate img{ width:100%; height:100%; object-fit:cover; }
@@ -66,6 +67,39 @@
   .field input, .field textarea{ width:100%; padding:13px 16px; border-radius:14px; border:2px solid var(--cream-2); font-family:'Karla'; font-size:1rem; background:var(--cream); color:var(--soil); resize:vertical; }
   .field input:focus, .field textarea:focus{ outline:none; border-color:var(--leaf); box-shadow:0 0 0 4px var(--ring); }
   .form-note{font-size:.85rem; color:#6b7a63;}
+  .service-card .price{ font-family:'Fredoka'; font-weight:700; color:var(--chili); font-size:1.15rem; margin:6px 0 12px; }
+  .service-card .btn-buy{ width:100%; text-align:center; padding:10px 20px; font-size:.9rem; }
+  .cart-btn{ background:var(--card); border:2px solid var(--leaf); border-radius:100px; padding:9px 16px; font-size:1.1rem; cursor:pointer; position:relative; }
+  .auth-area{ display:flex; align-items:center; gap:8px; }
+  .auth-hi{ font-weight:700; color:var(--leaf-dark); font-size:.9rem; margin-right:4px; }
+  .cart-badge{ position:absolute; top:-6px; right:-6px; background:var(--chili); color:#fff; font-size:.7rem; font-weight:700; border-radius:100px; width:20px; height:20px; align-items:center; justify-content:center; }
+  .cart-row{ display:grid; grid-template-columns:1fr auto auto auto auto auto; gap:8px; align-items:center; padding:10px 0; border-bottom:1px solid var(--cream-2); font-size:.9rem; }
+  .cart-row-name{ font-weight:700; color:var(--leaf-dark); }
+  .cart-row-price{ font-weight:700; }
+  .cart-qty-btn{ width:26px; height:26px; border-radius:50%; border:2px solid var(--cream-2); background:var(--cream); cursor:pointer; font-weight:700; }
+  .cart-remove{ background:none; border:none; color:var(--chili); font-size:1.2rem; cursor:pointer; }
+  .modal-overlay{ display:none; position:fixed; inset:0; background:rgba(91,58,36,0.45); z-index:100; align-items:center; justify-content:center; padding:20px; }
+  .muted{ color:#8a7457; font-size:.9rem; }
+  .category-grid{ display:grid; grid-template-columns:repeat(4, 1fr); gap:20px; margin-bottom:10px; }
+  .category-tile{ background:var(--card); border-radius:22px; padding:22px 16px; text-align:center; cursor:pointer; box-shadow:0 8px 20px rgba(91,58,36,0.08); transition:transform .2s; }
+  .category-tile:hover{ transform:translateY(-4px); }
+  .category-tile-img{ width:64px; height:64px; border-radius:50%; margin:0 auto 12px; overflow:hidden; display:flex; align-items:center; justify-content:center; font-size:2rem; background:var(--cream-2); }
+  .category-tile-img img{ width:100%; height:100%; object-fit:cover; }
+  .category-tile-name{ font-family:'Fredoka'; font-weight:700; color:var(--leaf-dark); }
+  .category-tile-count{ font-size:.8rem; color:#8a7457; margin-top:4px; }
+  .msg-thread{ max-height:320px; overflow-y:auto; display:flex; flex-direction:column; gap:10px; }
+  .msg-bubble{ padding:10px 14px; border-radius:16px; max-width:85%; font-size:.9rem; }
+  .msg-customer{ background:var(--leaf); color:#fff; align-self:flex-end; }
+  .msg-admin{ background:var(--cream-2); color:var(--soil); align-self:flex-start; }
+  .msg-sender{ font-weight:700; font-size:.75rem; opacity:.8; margin-bottom:2px; }
+  .msg-time{ font-size:.7rem; opacity:.65; margin-top:4px; }
+  @media (max-width: 640px){
+    .category-grid{ grid-template-columns:repeat(2, 1fr); }
+    .auth-area{ flex-wrap:wrap; justify-content:flex-end; }
+    .auth-hi{ width:100%; text-align:right; margin-bottom:4px; }
+  }
+  .modal-box{ background:var(--card); border-radius:24px; padding:32px; max-width:420px; width:100%; position:relative; }
+  .modal-close{ position:absolute; top:14px; right:16px; background:none; border:none; font-size:1.5rem; color:var(--soil); cursor:pointer; }
   footer{ background:var(--soil); color:#c9bda6; text-align:center; padding:26px 0; font-size:.9rem; }
   footer .mark-mini{color:var(--turmeric); font-weight:700;}
   @media (max-width: 880px){ .hero-grid, .about-grid, .contact-grid{grid-template-columns:1fr;} .services-grid{grid-template-columns:1fr;} .navlinks{display:none;} }
@@ -76,6 +110,8 @@
 <header><nav class="wrap">
   <a href="#home" class="brand"><span class="mark">BB</span> Bharath Bhoomi</a>
   <ul class="navlinks"><li><a href="#home">Home</a></li><li><a href="#about">About</a></li><li><a href="#services">Products</a></li><li><a href="#contact">Contact</a></li></ul>
+  <button type="button" class="cart-btn" onclick="openCart()">🛒 <span id="cartBadge" class="cart-badge" style="display:none;">0</span></button>
+  <div id="authArea" class="auth-area"></div>
 </nav></header>
 
 <section class="hero" id="home"><div class="wrap hero-grid">
@@ -101,7 +137,12 @@
 
 <section class="section" id="services"><div class="wrap">
   <div class="section-head"><div class="divider"></div><h2>What we grow &amp; offer</h2></div>
-  <div class="services-grid" id="fProducts"></div>
+  <div class="category-grid" id="fCategories"></div>
+  <div id="categoryBackRow" style="display:none; margin-bottom:20px;">
+    <button type="button" class="btn btn-ghost btn-sm" onclick="showCategories()">← All categories</button>
+    <span id="activeCategoryName" style="font-weight:700; color:var(--leaf-dark); margin-left:10px;"></span>
+  </div>
+  <div class="services-grid" id="fProducts" style="display:none;"></div>
 </div></section>
 
 <section class="section contact" id="contact"><div class="wrap">
@@ -123,6 +164,104 @@
 </div></section>
 
 <footer><div class="wrap"><span class="mark-mini">Bharath Bhoomi</span> · Naturally grown, honestly good · © 2026</div></footer>
+
+<div class="modal-overlay" id="cartModal">
+  <div class="modal-box">
+    <button type="button" class="modal-close" onclick="closeCart()">×</button>
+    <h3>Your cart</h3>
+    <div id="cartItems"></div>
+    <p id="cartTotal" style="font-weight:700; color:var(--chili); margin:14px 0;"></p>
+    <button type="button" class="btn btn-primary" style="width:100%; text-align:center;" onclick="goToCheckout()">Checkout</button>
+  </div>
+</div>
+
+<div class="modal-overlay" id="checkoutModal">
+  <div class="modal-box">
+    <button type="button" class="modal-close" onclick="closeCheckout()">×</button>
+    <h3>Checkout <span style="font-size:.7em; color:var(--chili); font-weight:700;">(Test mode — no real payment)</span></h3>
+    <p id="checkoutSummary" style="font-weight:700; color:var(--leaf-dark);"></p>
+    <form id="checkoutForm">
+      <div class="field"><label>Your name</label><input id="co_name" required></div>
+      <div class="field"><label>Email</label><input id="co_email" type="email" required></div>
+      <div class="field"><label>Delivery address</label><textarea id="co_address" rows="2" required></textarea></div>
+      <div class="field"><label>Pincode</label><input id="co_pincode" inputmode="numeric" required></div>
+      <div class="field"><label>Landmark (optional)</label><input id="co_landmark"></div>
+      <div class="field">
+        <label>Preferred delivery time</label>
+        <select id="co_time" required>
+          <option value="">Select a slot…</option>
+          <option value="Morning (9am–12pm)">Morning (9am–12pm)</option>
+          <option value="Afternoon (12pm–4pm)">Afternoon (12pm–4pm)</option>
+          <option value="Evening (4pm–8pm)">Evening (4pm–8pm)</option>
+          <option value="Anytime">Anytime</option>
+        </select>
+      </div>
+      <button type="submit" class="btn btn-primary">Pay now (test)</button>
+      <span class="form-note" id="checkoutNote"></span>
+    </form>
+  </div>
+</div>
+
+<div class="modal-overlay" id="signInModal">
+  <div class="modal-box">
+    <button type="button" class="modal-close" onclick="closeModal('signInModal')">×</button>
+    <h3>Sign in</h3>
+    <form id="signInForm">
+      <div class="field"><label>Email</label><input id="si_email" type="email" required></div>
+      <div class="field"><label>Password</label><input id="si_password" type="password" required></div>
+      <button type="submit" class="btn btn-primary">Sign in</button>
+      <span class="form-note" id="signInNote"></span>
+    </form>
+    <p class="muted" style="margin-top:14px;">New here? <a href="#" onclick="switchModal('signInModal','signUpModal'); return false;">Create an account</a></p>
+  </div>
+</div>
+
+<div class="modal-overlay" id="signUpModal">
+  <div class="modal-box">
+    <button type="button" class="modal-close" onclick="closeModal('signUpModal')">×</button>
+    <h3>Create account</h3>
+    <form id="signUpForm">
+      <div class="field"><label>Your name</label><input id="su_name" required></div>
+      <div class="field"><label>Email</label><input id="su_email" type="email" required></div>
+      <div class="field"><label>Password</label><input id="su_password" type="password" minlength="6" required></div>
+      <button type="submit" class="btn btn-primary">Sign up</button>
+      <span class="form-note" id="signUpNote"></span>
+    </form>
+    <p class="muted" style="margin-top:14px;">Already have an account? <a href="#" onclick="switchModal('signUpModal','signInModal'); return false;">Sign in</a></p>
+  </div>
+</div>
+
+<div class="modal-overlay" id="messagesModal">
+  <div class="modal-box">
+    <button type="button" class="modal-close" onclick="closeModal('messagesModal')">×</button>
+    <h3>Messages</h3>
+    <div id="messagesThread" class="msg-thread"></div>
+    <form id="messageForm" style="display:flex; gap:8px; margin-top:14px;">
+      <input id="msg_body" placeholder="Type a message…" style="flex:1; padding:11px 14px; border-radius:14px; border:2px solid var(--cream-2); background:var(--cream);">
+      <button type="submit" class="btn btn-primary btn-sm">Send</button>
+    </form>
+  </div>
+</div>
+
+<div class="modal-overlay" id="myOrdersModal">
+  <div class="modal-box">
+    <button type="button" class="modal-close" onclick="closeModal('myOrdersModal')">×</button>
+    <h3>My orders</h3>
+    <div id="myOrdersList"><p class="muted">Loading…</p></div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="confirmModal">
+  <div class="modal-box" style="text-align:center;">
+    <button type="button" class="modal-close" onclick="closeConfirm()">×</button>
+    <div style="font-size:2.4rem;">✅</div>
+    <h3>Order confirmed!</h3>
+    <p style="font-weight:700; color:var(--chili);" id="confirmOrderId"></p>
+    <p class="muted" id="confirmDetails"></p>
+    <p class="muted" style="font-size:.85rem;">(Test mode — no real payment was made)</p>
+    <button type="button" class="btn btn-primary" style="width:100%; text-align:center;" onclick="closeConfirm()">Done</button>
+  </div>
+</div>
 
 <script>
 // Same-origin API — works because this page is served by the same server as /api
@@ -155,21 +294,176 @@ async function loadContent(){
   }catch(e){ console.error('Could not load content', e); }
 }
 
-async function loadProducts(){
+let allCategories = [];
+let allProducts = [];
+
+async function loadCategoriesAndProducts(){
   try{
-    const res = await fetch(API + '/api/products');
-    const products = await res.json();
-    const wrap = document.getElementById('fProducts');
-    wrap.innerHTML = '';
-    products.forEach(p => {
-      const card = document.createElement('div');
-      card.className = 'service-card';
-      card.innerHTML = `<div class="service-icon">${esc(p.icon)}</div><h3></h3><p></p>`;
-      card.querySelector('h3').textContent = p.name;
-      card.querySelector('p').textContent = p.description;
-      wrap.appendChild(card);
+    const [catRes, prodRes] = await Promise.all([
+      fetch(API + '/api/categories'),
+      fetch(API + '/api/products'),
+    ]);
+    allCategories = await catRes.json();
+    allProducts = await prodRes.json();
+    renderCategories();
+  }catch(e){ console.error('Could not load categories/products', e); }
+}
+
+function renderCategories(){
+  const wrap = document.getElementById('fCategories');
+  wrap.innerHTML = '';
+  allCategories.forEach(c => {
+    const count = allProducts.filter(p => p.category_id === c.id).length;
+    const tile = document.createElement('div');
+    tile.className = 'category-tile';
+    tile.innerHTML = `
+      <div class="category-tile-img">${c.image ? `<img src="${c.image}" alt="">` : '🌿'}</div>
+      <div class="category-tile-name">${esc(c.name)}</div>
+      <div class="category-tile-count">${count} item${count===1?'':'s'}</div>`;
+    tile.onclick = () => showCategory(c);
+    wrap.appendChild(tile);
+  });
+}
+
+function showCategory(c){
+  document.getElementById('fCategories').style.display = 'none';
+  document.getElementById('categoryBackRow').style.display = 'flex';
+  document.getElementById('categoryBackRow').style.alignItems = 'center';
+  document.getElementById('activeCategoryName').textContent = c.name;
+  document.getElementById('fProducts').style.display = 'grid';
+  renderProductCards(allProducts.filter(p => p.category_id === c.id));
+}
+
+function showCategories(){
+  document.getElementById('fCategories').style.display = 'grid';
+  document.getElementById('categoryBackRow').style.display = 'none';
+  document.getElementById('fProducts').style.display = 'none';
+}
+
+function renderProductCards(products){
+  const wrap = document.getElementById('fProducts');
+  wrap.innerHTML = '';
+  if (!products.length){ wrap.innerHTML = '<p class="muted">No products in this category yet.</p>'; return; }
+  products.forEach(p => {
+    const card = document.createElement('div');
+    card.className = 'service-card';
+    card.innerHTML = `<div class="service-icon">${esc(p.icon)}</div><h3></h3><p></p><div class="price"></div><button type="button" class="btn btn-primary btn-buy">Add to cart</button>`;
+    card.querySelector('h3').textContent = p.name;
+    card.querySelector('p').textContent = p.description;
+    card.querySelector('.price').textContent = '₹' + Number(p.price || 0).toFixed(0);
+    card.querySelector('.btn-buy').onclick = () => addToCart(p);
+    wrap.appendChild(card);
+  });
+}
+
+// ---- CART ----
+let cart = [];
+function addToCart(p){
+  const existing = cart.find(i => i.name === p.name);
+  if (existing) existing.quantity += 1;
+  else cart.push({ name: p.name, price: Number(p.price)||0, quantity: 1 });
+  updateCartBadge();
+  openCart();
+}
+function updateCartBadge(){
+  const count = cart.reduce((s,i)=>s+i.quantity, 0);
+  const badge = document.getElementById('cartBadge');
+  badge.textContent = count;
+  badge.style.display = count ? 'inline-flex' : 'none';
+}
+function cartTotal(){
+  return cart.reduce((s,i)=> s + i.price*i.quantity, 0);
+}
+function renderCart(){
+  const wrap = document.getElementById('cartItems');
+  if (!cart.length){ wrap.innerHTML = '<p class="muted">Your cart is empty.</p>'; document.getElementById('cartTotal').textContent=''; return; }
+  wrap.innerHTML = '';
+  cart.forEach((item, idx) => {
+    const row = document.createElement('div');
+    row.className = 'cart-row';
+    row.innerHTML = `
+      <span class="cart-row-name">${esc(item.name)}</span>
+      <button type="button" class="cart-qty-btn" data-act="dec">−</button>
+      <span>${item.quantity}</span>
+      <button type="button" class="cart-qty-btn" data-act="inc">+</button>
+      <span class="cart-row-price">₹${(item.price*item.quantity).toFixed(0)}</span>
+      <button type="button" class="cart-remove" data-act="rm">×</button>`;
+    row.querySelector('[data-act="inc"]').onclick = () => { item.quantity++; renderCart(); updateCartBadge(); };
+    row.querySelector('[data-act="dec"]').onclick = () => { item.quantity = Math.max(1, item.quantity-1); renderCart(); updateCartBadge(); };
+    row.querySelector('[data-act="rm"]').onclick = () => { cart.splice(idx,1); renderCart(); updateCartBadge(); };
+    wrap.appendChild(row);
+  });
+  document.getElementById('cartTotal').textContent = 'Total: ₹' + cartTotal().toFixed(0);
+}
+function openCart(){
+  renderCart();
+  document.getElementById('cartModal').style.display = 'flex';
+}
+function closeCart(){
+  document.getElementById('cartModal').style.display = 'none';
+}
+function goToCheckout(){
+  if (!cart.length) return;
+  const c = getCustomer();
+  if (!c){
+    closeCart();
+    pendingCheckoutAfterAuth = true;
+    document.getElementById('signInNote').textContent = 'Please sign in to continue to checkout.';
+    openModal('signInModal');
+    return;
+  }
+  closeCart();
+  document.getElementById('checkoutSummary').textContent =
+    cart.map(i => `${i.name} ×${i.quantity}`).join(', ') + ' — ₹' + cartTotal().toFixed(0);
+  document.getElementById('co_name').value = c.name;
+  document.getElementById('co_email').value = c.email;
+  document.getElementById('checkoutModal').style.display = 'flex';
+  document.getElementById('checkoutNote').textContent = '';
+}
+function closeCheckout(){
+  document.getElementById('checkoutModal').style.display = 'none';
+}
+document.getElementById('checkoutForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const note = document.getElementById('checkoutNote');
+  const payload = {
+    customer_name: document.getElementById('co_name').value,
+    customer_email: document.getElementById('co_email').value,
+    address: document.getElementById('co_address').value,
+    pincode: document.getElementById('co_pincode').value,
+    landmark: document.getElementById('co_landmark').value,
+    preferred_time: document.getElementById('co_time').value,
+    items: cart.map(i => ({ name: i.name, price: i.price, quantity: i.quantity })),
+  };
+  note.textContent = 'Processing payment (test mode)…';
+  await new Promise(r => setTimeout(r, 900)); // simulate payment delay
+  try{
+    const c = getCustomer();
+    const headers = {'Content-Type':'application/json'};
+    if (c) headers['Authorization'] = 'Bearer ' + c.token;
+    const res = await fetch(API + '/api/orders', {
+      method: 'POST', headers, body: JSON.stringify(payload)
     });
-  }catch(e){ console.error('Could not load products', e); }
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'failed');
+    cart = [];
+    updateCartBadge();
+    e.target.reset();
+    showOrderConfirmation(data.order);
+  }catch(err){
+    note.textContent = err.message || 'Something went wrong — please try again.';
+  }
+});
+
+function showOrderConfirmation(order){
+  closeCheckout();
+  document.getElementById('confirmOrderId').textContent = '#' + order.id;
+  document.getElementById('confirmDetails').textContent =
+    `${order.customer_name} · ₹${Number(order.total).toFixed(0)} · Delivery: ${order.preferred_time || 'Anytime'}`;
+  document.getElementById('confirmModal').style.display = 'flex';
+}
+function closeConfirm(){
+  document.getElementById('confirmModal').style.display = 'none';
 }
 
 document.getElementById('contactForm').addEventListener('submit', async (e) => {
@@ -194,7 +488,169 @@ document.getElementById('contactForm').addEventListener('submit', async (e) => {
 });
 
 loadContent();
-loadProducts();
+loadCategoriesAndProducts();
+initAuth();
+
+// Log a visit once per browser session
+try {
+  if (!sessionStorage.getItem('bb_visit_logged')) {
+    fetch(API + '/api/analytics/visit', { method: 'POST' }).catch(()=>{});
+    sessionStorage.setItem('bb_visit_logged', '1');
+  }
+} catch(e) {}
+
+// ---- CUSTOMER AUTH ----
+let pendingCheckoutAfterAuth = false;
+function getCustomer(){
+  try{
+    const raw = localStorage.getItem('bb_customer');
+    return raw ? JSON.parse(raw) : null;
+  }catch(e){ return null; }
+}
+function setCustomer(data){
+  try{ localStorage.setItem('bb_customer', JSON.stringify(data)); }catch(e){}
+  renderAuthArea();
+}
+function clearCustomer(){
+  try{ localStorage.removeItem('bb_customer'); }catch(e){}
+  renderAuthArea();
+}
+function initAuth(){ renderAuthArea(); }
+function renderAuthArea(){
+  const area = document.getElementById('authArea');
+  const c = getCustomer();
+  if (c){
+    area.innerHTML = `<span class="auth-hi">Hi, ${esc(c.name)}</span>
+      <button type="button" class="btn btn-ghost btn-sm cart-btn" onclick="openMessages()">💬 <span id="msgBadge" class="cart-badge" style="display:none;">0</span></button>
+      <button type="button" class="btn btn-ghost btn-sm" onclick="openMyOrders()">My orders</button>
+      <button type="button" class="btn btn-ghost btn-sm" onclick="clearCustomer()">Log out</button>`;
+    checkUnreadMessages();
+  } else {
+    area.innerHTML = `<button type="button" class="btn btn-ghost btn-sm" onclick="openModal('signInModal')">Sign in</button>
+      <button type="button" class="btn btn-primary btn-sm" onclick="openModal('signUpModal')">Sign up</button>`;
+  }
+}
+function openModal(id){ document.getElementById(id).style.display = 'flex'; }
+function closeModal(id){ document.getElementById(id).style.display = 'none'; }
+function switchModal(from, to){ closeModal(from); openModal(to); }
+
+document.getElementById('signUpForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const note = document.getElementById('signUpNote');
+  note.textContent = 'Creating account…';
+  try{
+    const res = await fetch(API + '/api/customer-auth/signup', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({
+        name: document.getElementById('su_name').value,
+        email: document.getElementById('su_email').value,
+        password: document.getElementById('su_password').value,
+      })
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Could not sign up');
+    setCustomer({ token: data.token, name: data.name, email: data.email });
+    closeModal('signUpModal');
+    e.target.reset();
+    if (pendingCheckoutAfterAuth){ pendingCheckoutAfterAuth = false; goToCheckout(); }
+  }catch(err){ note.textContent = err.message; }
+});
+
+document.getElementById('signInForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const note = document.getElementById('signInNote');
+  note.textContent = 'Signing in…';
+  try{
+    const res = await fetch(API + '/api/customer-auth/login', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({
+        email: document.getElementById('si_email').value,
+        password: document.getElementById('si_password').value,
+      })
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Could not sign in');
+    setCustomer({ token: data.token, name: data.name, email: data.email });
+    closeModal('signInModal');
+    e.target.reset();
+    if (pendingCheckoutAfterAuth){ pendingCheckoutAfterAuth = false; goToCheckout(); }
+  }catch(err){ note.textContent = err.message; }
+});
+
+async function openMyOrders(){
+  openModal('myOrdersModal');
+  const wrap = document.getElementById('myOrdersList');
+  wrap.innerHTML = '<p class="muted">Loading…</p>';
+  const c = getCustomer();
+  if (!c) return;
+  try{
+    const res = await fetch(API + '/api/customer-auth/my-orders', { headers: { 'Authorization': 'Bearer ' + c.token } });
+    const orders = await res.json();
+    if (!res.ok) throw new Error(orders.error || 'Could not load orders');
+    if (!orders.length){ wrap.innerHTML = '<p class="muted">No orders yet.</p>'; return; }
+    wrap.innerHTML = orders.map(o => {
+      const items = (o.items||[]).map(i => `${esc(i.name)} ×${i.quantity}`).join(', ');
+      return `<div class="cart-row" style="grid-template-columns:1fr auto;">
+        <span><strong>#${o.id}</strong> — ${items}<br><span class="muted">${new Date(o.created_at).toLocaleDateString()} · ${esc(o.preferred_time||'Anytime')}</span></span>
+        <span class="cart-row-price">₹${Number(o.total).toFixed(0)}</span>
+      </div>`;
+    }).join('');
+  }catch(err){ wrap.innerHTML = `<p class="muted">${esc(err.message)}</p>`; }
+}
+
+async function checkUnreadMessages(){
+  const c = getCustomer();
+  if (!c) return;
+  try{
+    const res = await fetch(API + '/api/messages/mine/unread-count', { headers: { 'Authorization': 'Bearer ' + c.token } });
+    const data = await res.json();
+    const badge = document.getElementById('msgBadge');
+    if (badge){
+      badge.textContent = data.count;
+      badge.style.display = data.count ? 'inline-flex' : 'none';
+    }
+  }catch(e){}
+}
+
+async function openMessages(){
+  openModal('messagesModal');
+  const wrap = document.getElementById('messagesThread');
+  wrap.innerHTML = '<p class="muted">Loading…</p>';
+  const c = getCustomer();
+  if (!c) return;
+  try{
+    const res = await fetch(API + '/api/messages/mine', { headers: { 'Authorization': 'Bearer ' + c.token } });
+    const msgs = await res.json();
+    if (!res.ok) throw new Error(msgs.error || 'Could not load messages');
+    if (!msgs.length){ wrap.innerHTML = '<p class="muted">No messages yet — send us one below!</p>'; }
+    else {
+      wrap.innerHTML = msgs.map(m => `
+        <div class="msg-bubble ${m.sender === 'admin' ? 'msg-admin' : 'msg-customer'}">
+          <div class="msg-sender">${m.sender === 'admin' ? 'Bharath Bhoomi' : 'You'}</div>
+          <div>${esc(m.body)}</div>
+          <div class="msg-time">${new Date(m.created_at).toLocaleString()}</div>
+        </div>`).join('');
+    }
+    document.getElementById('msgBadge').style.display = 'none';
+  }catch(err){ wrap.innerHTML = `<p class="muted">${esc(err.message)}</p>`; }
+}
+
+document.getElementById('messageForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const c = getCustomer();
+  if (!c) return;
+  const input = document.getElementById('msg_body');
+  const body = input.value.trim();
+  if (!body) return;
+  try{
+    await fetch(API + '/api/messages/mine', {
+      method:'POST', headers: {'Content-Type':'application/json','Authorization':'Bearer '+c.token},
+      body: JSON.stringify({ body })
+    });
+    input.value = '';
+    openMessages();
+  }catch(err){}
+});
 </script>
 </body>
 </html>

@@ -187,7 +187,10 @@
       <div id="threadList"><div class="empty">Loading…</div></div>
     </div>
     <div class="card" id="threadDetailCard" style="display:none;">
-      <h2 id="threadCustomerName"></h2>
+      <div style="display:flex; justify-content:space-between; align-items:center;">
+  <h2 id="threadCustomerName"></h2>
+  <button type="button" id="closeThreadBtn" class="btn btn-ghost btn-sm" style="cursor:pointer;">✕</button>
+</div>
       <div id="threadMessages" class="msg-thread"></div>
       <form id="replyForm" style="display:flex; gap:8px; margin-top:14px;">
         <input id="reply_body" placeholder="Type a reply…" style="flex:1; padding:11px 14px; border-radius:14px; border:2px solid var(--cream-2); background:var(--cream);">
@@ -412,6 +415,10 @@ document.getElementById('replyForm').addEventListener('submit', async (e) => {
     toast('Reply sent');
   }catch(err){ toast('Could not send: '+err.message); }
 });
+  document.getElementById('closeThreadBtn').onclick = () => {
+  document.getElementById('threadDetailCard').style.display = 'none';
+  activeThreadCustomerId = null;
+};
 async function loadContent(){
   contentDoc = await api('/api/content');
   document.getElementById('c_badge').value = contentDoc.badge || '';

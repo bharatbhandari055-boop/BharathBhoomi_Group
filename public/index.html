@@ -19,7 +19,7 @@
   h1,h2,h3{ font-family:'Fredoka', sans-serif; font-weight:600; margin:0 0 .4em 0; color:var(--leaf-dark); line-height:1.12; }
   .wrap{max-width:var(--max); margin:0 auto; padding:0 28px;}
   header{ position:sticky; top:0; z-index:50; background:rgba(251,246,234,0.92); backdrop-filter:blur(6px); border-bottom:2px solid var(--cream-2); }
-  nav.wrap{ display:flex; align-items:center; justify-content:space-between; padding:16px 28px; }
+  nav.wrap{ display:flex; align-items:center; justify-content:space-between; padding:16px 28px; flex-wrap:wrap; gap:10px; }
   .brand{ display:flex; align-items:center; gap:10px; font-family:'Fredoka', sans-serif; font-weight:700; font-size:1.3rem; color:var(--leaf-dark); text-decoration:none; }
   .brand .mark{ width:38px;height:38px;border-radius:50%; background:var(--leaf); color:white; display:flex;align-items:center;justify-content:center; font-size:.85rem; font-weight:700; }
   .navlinks{display:flex; gap:8px; list-style:none; margin:0; padding:0;}
@@ -80,6 +80,24 @@
   .cart-remove{ background:none; border:none; color:var(--chili); font-size:1.2rem; cursor:pointer; }
   .modal-overlay{ display:none; position:fixed; inset:0; background:rgba(91,58,36,0.45); z-index:100; align-items:center; justify-content:center; padding:20px; }
   .muted{ color:#8a7457; font-size:.9rem; }
+  .category-grid{ display:grid; grid-template-columns:repeat(4, 1fr); gap:20px; margin-bottom:10px; }
+  .category-tile{ background:var(--card); border-radius:22px; padding:22px 16px; text-align:center; cursor:pointer; box-shadow:0 8px 20px rgba(91,58,36,0.08); transition:transform .2s; }
+  .category-tile:hover{ transform:translateY(-4px); }
+  .category-tile-img{ width:64px; height:64px; border-radius:50%; margin:0 auto 12px; overflow:hidden; display:flex; align-items:center; justify-content:center; font-size:2rem; background:var(--cream-2); }
+  .category-tile-img img{ width:100%; height:100%; object-fit:cover; }
+  .category-tile-name{ font-family:'Fredoka'; font-weight:700; color:var(--leaf-dark); }
+  .category-tile-count{ font-size:.8rem; color:#8a7457; margin-top:4px; }
+  .msg-thread{ max-height:320px; overflow-y:auto; display:flex; flex-direction:column; gap:10px; }
+  .msg-bubble{ padding:10px 14px; border-radius:16px; max-width:85%; font-size:.9rem; }
+  .msg-customer{ background:var(--leaf); color:#fff; align-self:flex-end; }
+  .msg-admin{ background:var(--cream-2); color:var(--soil); align-self:flex-start; }
+  .msg-sender{ font-weight:700; font-size:.75rem; opacity:.8; margin-bottom:2px; }
+  .msg-time{ font-size:.7rem; opacity:.65; margin-top:4px; }
+  @media (max-width: 640px){
+    .category-grid{ grid-template-columns:repeat(2, 1fr); }
+    .auth-area{ flex-wrap:wrap; justify-content:flex-end; }
+    .auth-hi{ width:100%; text-align:right; margin-bottom:4px; }
+  }
   .modal-box{ background:var(--card); border-radius:24px; padding:32px; max-width:420px; width:100%; position:relative; }
   .modal-close{ position:absolute; top:14px; right:16px; background:none; border:none; font-size:1.5rem; color:var(--soil); cursor:pointer; }
   footer{ background:var(--soil); color:#c9bda6; text-align:center; padding:26px 0; font-size:.9rem; }
@@ -119,7 +137,12 @@
 
 <section class="section" id="services"><div class="wrap">
   <div class="section-head"><div class="divider"></div><h2>What we grow &amp; offer</h2></div>
-  <div class="services-grid" id="fProducts"></div>
+  <div class="category-grid" id="fCategories"></div>
+  <div id="categoryBackRow" style="display:none; margin-bottom:20px;">
+    <button type="button" class="btn btn-ghost btn-sm" onclick="showCategories()">← All categories</button>
+    <span id="activeCategoryName" style="font-weight:700; color:var(--leaf-dark); margin-left:10px;"></span>
+  </div>
+  <div class="services-grid" id="fProducts" style="display:none;"></div>
 </div></section>
 
 <section class="section contact" id="contact"><div class="wrap">
@@ -208,6 +231,18 @@
   </div>
 </div>
 
+<div class="modal-overlay" id="messagesModal">
+  <div class="modal-box">
+    <button type="button" class="modal-close" onclick="closeModal('messagesModal')">×</button>
+    <h3>Messages</h3>
+    <div id="messagesThread" class="msg-thread"></div>
+    <form id="messageForm" style="display:flex; gap:8px; margin-top:14px;">
+      <input id="msg_body" placeholder="Type a message…" style="flex:1; padding:11px 14px; border-radius:14px; border:2px solid var(--cream-2); background:var(--cream);">
+      <button type="submit" class="btn btn-primary btn-sm">Send</button>
+    </form>
+  </div>
+</div>
+
 <div class="modal-overlay" id="myOrdersModal">
   <div class="modal-box">
     <button type="button" class="modal-close" onclick="closeModal('myOrdersModal')">×</button>
@@ -259,24 +294,66 @@ async function loadContent(){
   }catch(e){ console.error('Could not load content', e); }
 }
 
-async function loadProducts(){
+let allCategories = [];
+let allProducts = [];
+
+async function loadCategoriesAndProducts(){
   try{
-    const res = await fetch(API + '/api/products');
-    const products = await res.json();
-    window.__products = products;
-    const wrap = document.getElementById('fProducts');
-    wrap.innerHTML = '';
-    products.forEach(p => {
-      const card = document.createElement('div');
-      card.className = 'service-card';
-      card.innerHTML = `<div class="service-icon">${esc(p.icon)}</div><h3></h3><p></p><div class="price"></div><button type="button" class="btn btn-primary btn-buy">Add to cart</button>`;
-      card.querySelector('h3').textContent = p.name;
-      card.querySelector('p').textContent = p.description;
-      card.querySelector('.price').textContent = '₹' + Number(p.price || 0).toFixed(0);
-      card.querySelector('.btn-buy').onclick = () => addToCart(p);
-      wrap.appendChild(card);
-    });
-  }catch(e){ console.error('Could not load products', e); }
+    const [catRes, prodRes] = await Promise.all([
+      fetch(API + '/api/categories'),
+      fetch(API + '/api/products'),
+    ]);
+    allCategories = await catRes.json();
+    allProducts = await prodRes.json();
+    renderCategories();
+  }catch(e){ console.error('Could not load categories/products', e); }
+}
+
+function renderCategories(){
+  const wrap = document.getElementById('fCategories');
+  wrap.innerHTML = '';
+  allCategories.forEach(c => {
+    const count = allProducts.filter(p => p.category_id === c.id).length;
+    const tile = document.createElement('div');
+    tile.className = 'category-tile';
+    tile.innerHTML = `
+      <div class="category-tile-img">${c.image ? `<img src="${c.image}" alt="">` : '🌿'}</div>
+      <div class="category-tile-name">${esc(c.name)}</div>
+      <div class="category-tile-count">${count} item${count===1?'':'s'}</div>`;
+    tile.onclick = () => showCategory(c);
+    wrap.appendChild(tile);
+  });
+}
+
+function showCategory(c){
+  document.getElementById('fCategories').style.display = 'none';
+  document.getElementById('categoryBackRow').style.display = 'flex';
+  document.getElementById('categoryBackRow').style.alignItems = 'center';
+  document.getElementById('activeCategoryName').textContent = c.name;
+  document.getElementById('fProducts').style.display = 'grid';
+  renderProductCards(allProducts.filter(p => p.category_id === c.id));
+}
+
+function showCategories(){
+  document.getElementById('fCategories').style.display = 'grid';
+  document.getElementById('categoryBackRow').style.display = 'none';
+  document.getElementById('fProducts').style.display = 'none';
+}
+
+function renderProductCards(products){
+  const wrap = document.getElementById('fProducts');
+  wrap.innerHTML = '';
+  if (!products.length){ wrap.innerHTML = '<p class="muted">No products in this category yet.</p>'; return; }
+  products.forEach(p => {
+    const card = document.createElement('div');
+    card.className = 'service-card';
+    card.innerHTML = `<div class="service-icon">${esc(p.icon)}</div><h3></h3><p></p><div class="price"></div><button type="button" class="btn btn-primary btn-buy">Add to cart</button>`;
+    card.querySelector('h3').textContent = p.name;
+    card.querySelector('p').textContent = p.description;
+    card.querySelector('.price').textContent = '₹' + Number(p.price || 0).toFixed(0);
+    card.querySelector('.btn-buy').onclick = () => addToCart(p);
+    wrap.appendChild(card);
+  });
 }
 
 // ---- CART ----
@@ -327,14 +404,19 @@ function closeCart(){
 }
 function goToCheckout(){
   if (!cart.length) return;
+  const c = getCustomer();
+  if (!c){
+    closeCart();
+    pendingCheckoutAfterAuth = true;
+    document.getElementById('signInNote').textContent = 'Please sign in to continue to checkout.';
+    openModal('signInModal');
+    return;
+  }
   closeCart();
   document.getElementById('checkoutSummary').textContent =
     cart.map(i => `${i.name} ×${i.quantity}`).join(', ') + ' — ₹' + cartTotal().toFixed(0);
-  const c = getCustomer();
-  if (c){
-    document.getElementById('co_name').value = c.name;
-    document.getElementById('co_email').value = c.email;
-  }
+  document.getElementById('co_name').value = c.name;
+  document.getElementById('co_email').value = c.email;
   document.getElementById('checkoutModal').style.display = 'flex';
   document.getElementById('checkoutNote').textContent = '';
 }
@@ -406,7 +488,7 @@ document.getElementById('contactForm').addEventListener('submit', async (e) => {
 });
 
 loadContent();
-loadProducts();
+loadCategoriesAndProducts();
 initAuth();
 
 // Log a visit once per browser session
@@ -418,6 +500,7 @@ try {
 } catch(e) {}
 
 // ---- CUSTOMER AUTH ----
+let pendingCheckoutAfterAuth = false;
 function getCustomer(){
   try{
     const raw = localStorage.getItem('bb_customer');
@@ -438,8 +521,10 @@ function renderAuthArea(){
   const c = getCustomer();
   if (c){
     area.innerHTML = `<span class="auth-hi">Hi, ${esc(c.name)}</span>
+      <button type="button" class="btn btn-ghost btn-sm cart-btn" onclick="openMessages()">💬 <span id="msgBadge" class="cart-badge" style="display:none;">0</span></button>
       <button type="button" class="btn btn-ghost btn-sm" onclick="openMyOrders()">My orders</button>
       <button type="button" class="btn btn-ghost btn-sm" onclick="clearCustomer()">Log out</button>`;
+    checkUnreadMessages();
   } else {
     area.innerHTML = `<button type="button" class="btn btn-ghost btn-sm" onclick="openModal('signInModal')">Sign in</button>
       <button type="button" class="btn btn-primary btn-sm" onclick="openModal('signUpModal')">Sign up</button>`;
@@ -467,6 +552,7 @@ document.getElementById('signUpForm').addEventListener('submit', async (e) => {
     setCustomer({ token: data.token, name: data.name, email: data.email });
     closeModal('signUpModal');
     e.target.reset();
+    if (pendingCheckoutAfterAuth){ pendingCheckoutAfterAuth = false; goToCheckout(); }
   }catch(err){ note.textContent = err.message; }
 });
 
@@ -487,6 +573,7 @@ document.getElementById('signInForm').addEventListener('submit', async (e) => {
     setCustomer({ token: data.token, name: data.name, email: data.email });
     closeModal('signInModal');
     e.target.reset();
+    if (pendingCheckoutAfterAuth){ pendingCheckoutAfterAuth = false; goToCheckout(); }
   }catch(err){ note.textContent = err.message; }
 });
 
@@ -510,6 +597,60 @@ async function openMyOrders(){
     }).join('');
   }catch(err){ wrap.innerHTML = `<p class="muted">${esc(err.message)}</p>`; }
 }
+
+async function checkUnreadMessages(){
+  const c = getCustomer();
+  if (!c) return;
+  try{
+    const res = await fetch(API + '/api/messages/mine/unread-count', { headers: { 'Authorization': 'Bearer ' + c.token } });
+    const data = await res.json();
+    const badge = document.getElementById('msgBadge');
+    if (badge){
+      badge.textContent = data.count;
+      badge.style.display = data.count ? 'inline-flex' : 'none';
+    }
+  }catch(e){}
+}
+
+async function openMessages(){
+  openModal('messagesModal');
+  const wrap = document.getElementById('messagesThread');
+  wrap.innerHTML = '<p class="muted">Loading…</p>';
+  const c = getCustomer();
+  if (!c) return;
+  try{
+    const res = await fetch(API + '/api/messages/mine', { headers: { 'Authorization': 'Bearer ' + c.token } });
+    const msgs = await res.json();
+    if (!res.ok) throw new Error(msgs.error || 'Could not load messages');
+    if (!msgs.length){ wrap.innerHTML = '<p class="muted">No messages yet — send us one below!</p>'; }
+    else {
+      wrap.innerHTML = msgs.map(m => `
+        <div class="msg-bubble ${m.sender === 'admin' ? 'msg-admin' : 'msg-customer'}">
+          <div class="msg-sender">${m.sender === 'admin' ? 'Bharath Bhoomi' : 'You'}</div>
+          <div>${esc(m.body)}</div>
+          <div class="msg-time">${new Date(m.created_at).toLocaleString()}</div>
+        </div>`).join('');
+    }
+    document.getElementById('msgBadge').style.display = 'none';
+  }catch(err){ wrap.innerHTML = `<p class="muted">${esc(err.message)}</p>`; }
+}
+
+document.getElementById('messageForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const c = getCustomer();
+  if (!c) return;
+  const input = document.getElementById('msg_body');
+  const body = input.value.trim();
+  if (!body) return;
+  try{
+    await fetch(API + '/api/messages/mine', {
+      method:'POST', headers: {'Content-Type':'application/json','Authorization':'Bearer '+c.token},
+      body: JSON.stringify({ body })
+    });
+    input.value = '';
+    openMessages();
+  }catch(err){}
+});
 </script>
 </body>
 </html>

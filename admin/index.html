@@ -40,6 +40,13 @@
   .item-title{font-weight:700; font-family:'Fredoka'; color:var(--leaf-dark);}
   .item-sub{font-size:.85rem; color:#7a6650;}
   .empty{padding:26px; text-align:center; color:#8a7457; font-size:.92rem;}
+  .thumb{ width:44px; height:44px; border-radius:10px; object-fit:cover; background:var(--cream-2); margin-right:12px; flex-shrink:0; }
+  .msg-thread{ max-height:320px; overflow-y:auto; display:flex; flex-direction:column; gap:10px; }
+  .msg-bubble{ padding:10px 14px; border-radius:16px; max-width:85%; font-size:.9rem; }
+  .msg-customer{ background:var(--leaf); color:#fff; align-self:flex-end; }
+  .msg-admin{ background:var(--cream-2); color:var(--soil); align-self:flex-start; }
+  .msg-sender{ font-weight:700; font-size:.75rem; opacity:.8; margin-bottom:2px; }
+  .msg-time{ font-size:.7rem; opacity:.65; margin-top:4px; }
   .tag-pill{display:inline-flex; align-items:center; gap:6px; background:var(--cream-2); padding:6px 12px; border-radius:100px; font-size:.85rem; font-weight:700; margin:4px 6px 0 0;}
   .tag-pill button{background:none; border:none; color:var(--chili); font-weight:700;}
   .gate{display:flex; align-items:center; justify-content:center; min-height:100vh; padding:20px;}
@@ -71,8 +78,10 @@
   <div class="tabs wrap">
     <button class="tab active" data-tab="content">Content</button>
     <button class="tab" data-tab="photos">Photo</button>
+    <button class="tab" data-tab="categories">Categories</button>
     <button class="tab" data-tab="products">Products</button>
     <button class="tab" data-tab="customers">Customers</button>
+    <button class="tab" data-tab="messages">Messages</button>
     <button class="tab" data-tab="reports">Reports</button>
   </div>
 </header>
@@ -120,16 +129,37 @@
     </div>
   </section>
 
+  <section class="panel" id="panel-categories">
+    <div class="card">
+      <h2 id="catFormTitle">Add a category</h2>
+      <div class="field"><label>Name</label><input id="cat_name"></div>
+      <div class="field">
+        <label>Image</label>
+        <img id="catImagePreview" class="photo-preview" style="max-width:180px; aspect-ratio:1/1; display:none;">
+        <input type="file" id="catImageInput" accept="image/*" style="display:none;">
+        <button class="btn btn-ghost btn-sm" id="catImageBtn" type="button">Upload image</button>
+      </div>
+      <button class="btn btn-primary btn-sm" id="saveCategoryBtn">Add category</button>
+      <button class="btn btn-ghost btn-sm" id="cancelCategoryEditBtn" type="button" style="display:none;">Cancel edit</button>
+      <span class="save-note" id="categoryNote"></span>
+    </div>
+    <div class="card"><h2>Categories</h2><div id="categoryList"><div class="empty">Loading…</div></div></div>
+  </section>
+
   <section class="panel" id="panel-products">
     <div class="card">
-      <h2>Add a product</h2>
+      <h2 id="prodFormTitle">Add a product</h2>
       <div class="row2">
         <div class="field"><label>Name</label><input id="p_name"></div>
         <div class="field"><label>Icon (emoji)</label><input id="p_icon" placeholder="🌾" maxlength="4"></div>
       </div>
-      <div class="field"><label>Price (₹)</label><input id="p_price" type="number" min="0" step="1"></div>
+      <div class="row2">
+        <div class="field"><label>Price (₹)</label><input id="p_price" type="number" min="0" step="1"></div>
+        <div class="field"><label>Category</label><select id="p_category"><option value="">Select a category…</option></select></div>
+      </div>
       <div class="field"><label>Description</label><textarea id="p_desc" rows="2"></textarea></div>
       <button class="btn btn-primary btn-sm" id="addProductBtn">Add product</button>
+      <button class="btn btn-ghost btn-sm" id="cancelProductEditBtn" type="button" style="display:none;">Cancel edit</button>
       <span class="save-note" id="productAddNote"></span>
     </div>
     <div class="card"><h2>Products</h2><div id="productList"><div class="empty">Loading…</div></div></div>
@@ -151,6 +181,20 @@
       <div id="customerList"><div class="empty">Loading…</div></div>
     </div>
   </section>
+  <section class="panel" id="panel-messages">
+    <div class="card">
+      <h2>Conversations</h2>
+      <div id="threadList"><div class="empty">Loading…</div></div>
+    </div>
+    <div class="card" id="threadDetailCard" style="display:none;">
+      <h2 id="threadCustomerName"></h2>
+      <div id="threadMessages" class="msg-thread"></div>
+      <form id="replyForm" style="display:flex; gap:8px; margin-top:14px;">
+        <input id="reply_body" placeholder="Type a reply…" style="flex:1; padding:11px 14px; border-radius:14px; border:2px solid var(--cream-2); background:var(--cream);">
+        <button type="submit" class="btn btn-primary btn-sm">Reply</button>
+      </form>
+    </div>
+  </section>
   <section class="panel" id="panel-reports">
     <div class="card">
       <h2>Visitors</h2>
@@ -158,12 +202,14 @@
       <div id="visitorList"></div>
     </div>
     <div class="card">
-      <h2>Sales by product</h2>
-      <div id="salesList"><div class="empty">No orders yet.</div></div>
+      <h2>Sales by category</h2>
+      <button class="btn btn-ghost btn-sm" id="downloadSalesBtn" type="button">Download CSV</button>
+      <div id="salesList" style="margin-top:10px;"><div class="empty">No orders yet.</div></div>
     </div>
     <div class="card">
       <h2>Recent orders</h2>
-      <div id="ordersList"><div class="empty">No orders yet.</div></div>
+      <button class="btn btn-ghost btn-sm" id="downloadOrdersBtn" type="button">Download CSV</button>
+      <div id="ordersList" style="margin-top:10px;"><div class="empty">No orders yet.</div></div>
     </div>
   </section>
 </main>
@@ -223,13 +269,16 @@ async function startApp(){
   document.getElementById('appRoot').style.display = 'block';
   try{
     await loadContent();
+    await loadCategories();
     await loadProducts();
     await loadCustomers();
     await loadReports();
+    await loadThreads();
   }catch(e){ /* handled by api() */ }
 }
 
 // ---- REPORTS ----
+let lastOrders = [];
 async function loadReports(){
   try{
     const visits = await api('/api/analytics');
@@ -246,6 +295,7 @@ async function loadReports(){
     });
 
     const orders = await api('/api/orders');
+    lastOrders = orders;
     const ordersList = document.getElementById('ordersList');
     if (!orders.length){ ordersList.innerHTML = '<div class="empty">No orders yet.</div>'; }
     else {
@@ -253,17 +303,29 @@ async function loadReports(){
       orders.slice(0,15).forEach(o => {
         const row = document.createElement('div'); row.className = 'item';
         const itemsText = (o.items||[]).map(i => `${i.name} ×${i.quantity}`).join(', ');
-        row.innerHTML = `<div class="item-body"><div class="item-title">${esc(o.customer_name)} — ₹${Number(o.total).toFixed(0)}</div><div class="item-sub">${esc(itemsText)} · ${new Date(o.created_at).toLocaleString()}</div></div>`;
+        const deliveryText = [o.address, o.pincode, o.landmark].filter(Boolean).join(', ');
+        row.innerHTML = `<div class="item-body"><div class="item-title">#${o.id} ${esc(o.customer_name)} — ₹${Number(o.total).toFixed(0)}</div><div class="item-sub">${esc(itemsText)} · ${new Date(o.created_at).toLocaleString()}</div><div class="item-sub">📍 ${esc(deliveryText)} · 🕒 ${esc(o.preferred_time||'Anytime')} · ✉️ ${esc(o.customer_email)}</div></div>`;
         ordersList.appendChild(row);
       });
     }
 
+    // Sales by category: map product name -> category name via current product list
+    const nameToCategory = {};
+    try{
+      const products = await api('/api/products');
+      const catById = {};
+      allCategoriesAdmin.forEach(c => catById[c.id] = c.name);
+      products.forEach(p => { nameToCategory[p.name] = catById[p.category_id] || 'Uncategorized'; });
+    }catch(e){}
+
     const bySales = {};
     orders.forEach(o => (o.items||[]).forEach(i => {
-      if (!bySales[i.name]) bySales[i.name] = { qty: 0, revenue: 0 };
-      bySales[i.name].qty += Number(i.quantity)||0;
-      bySales[i.name].revenue += (Number(i.price)||0) * (Number(i.quantity)||0);
+      const cat = nameToCategory[i.name] || 'Uncategorized';
+      if (!bySales[cat]) bySales[cat] = { qty: 0, revenue: 0 };
+      bySales[cat].qty += Number(i.quantity)||0;
+      bySales[cat].revenue += (Number(i.price)||0) * (Number(i.quantity)||0);
     }));
+    window.__lastSalesByCategory = bySales;
     const salesList = document.getElementById('salesList');
     const names = Object.keys(bySales);
     if (!names.length){ salesList.innerHTML = '<div class="empty">No orders yet.</div>'; }
@@ -278,7 +340,78 @@ async function loadReports(){
   }catch(e){ console.error(e); }
 }
 
-// ---- CONTENT ----
+// ---- CSV EXPORT ----
+function downloadCsv(filename, rows){
+  const csv = rows.map(r => r.map(cell => {
+    const s = String(cell == null ? '' : cell).replace(/"/g,'""');
+    return /[",\n]/.test(s) ? `"${s}"` : s;
+  }).join(',')).join('\n');
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = filename;
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+document.getElementById('downloadOrdersBtn').onclick = () => {
+  const rows = [['Order ID','Customer','Email','Address','Pincode','Landmark','Delivery time','Items','Total','Status','Date']];
+  lastOrders.forEach(o => {
+    const itemsText = (o.items||[]).map(i => `${i.name} x${i.quantity}`).join('; ');
+    rows.push([o.id, o.customer_name, o.customer_email, o.address, o.pincode, o.landmark, o.preferred_time, itemsText, o.total, o.status, new Date(o.created_at).toLocaleString()]);
+  });
+  downloadCsv('orders.csv', rows);
+};
+document.getElementById('downloadSalesBtn').onclick = () => {
+  const bySales = window.__lastSalesByCategory || {};
+  const rows = [['Category','Units sold','Revenue']];
+  Object.keys(bySales).forEach(name => rows.push([name, bySales[name].qty, bySales[name].revenue]));
+  downloadCsv('sales-by-category.csv', rows);
+};
+
+// ---- MESSAGES ----
+let activeThreadCustomerId = null;
+async function loadThreads(){
+  const threads = await api('/api/messages/threads');
+  const wrap = document.getElementById('threadList');
+  if (!threads.length){ wrap.innerHTML = '<div class="empty">No conversations yet.</div>'; return; }
+  wrap.innerHTML = '';
+  threads.forEach(t => {
+    const row = document.createElement('div'); row.className = 'item';
+    row.style.cursor = 'pointer';
+    row.innerHTML = `<div class="item-body"><div class="item-title">${esc(t.name)}</div><div class="item-sub">${esc(t.email)} · last message ${new Date(t.last_message_at).toLocaleString()}</div></div>`;
+    row.onclick = () => openThread(t.customer_account_id, t.name);
+    wrap.appendChild(row);
+  });
+}
+async function openThread(customerId, name){
+  activeThreadCustomerId = customerId;
+  document.getElementById('threadDetailCard').style.display = 'block';
+  document.getElementById('threadCustomerName').textContent = name;
+  const wrap = document.getElementById('threadMessages');
+  wrap.innerHTML = '<p class="muted">Loading…</p>';
+  const msgs = await api('/api/messages/thread/'+customerId);
+  if (!msgs.length){ wrap.innerHTML = '<p class="muted">No messages yet.</p>'; return; }
+  wrap.innerHTML = msgs.map(m => `
+    <div class="msg-bubble ${m.sender === 'admin' ? 'msg-customer' : 'msg-admin'}">
+      <div class="msg-sender">${m.sender === 'admin' ? 'You' : name}</div>
+      <div>${esc(m.body)}</div>
+      <div class="msg-time">${new Date(m.created_at).toLocaleString()}</div>
+    </div>`).join('');
+}
+document.getElementById('replyForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  if (!activeThreadCustomerId) return;
+  const input = document.getElementById('reply_body');
+  const body = input.value.trim();
+  if (!body) return;
+  try{
+    await api('/api/messages/thread/'+activeThreadCustomerId+'/reply', { method:'POST', body: JSON.stringify({ body }) });
+    input.value = '';
+    const name = document.getElementById('threadCustomerName').textContent;
+    openThread(activeThreadCustomerId, name);
+    toast('Reply sent');
+  }catch(err){ toast('Could not send: '+err.message); }
+});
 async function loadContent(){
   contentDoc = await api('/api/content');
   document.getElementById('c_badge').value = contentDoc.badge || '';
@@ -345,34 +478,148 @@ document.getElementById('heroPhotoInput').onchange = async (e) => {
   }catch(err){ note.textContent = 'Upload failed: '+err.message; }
 };
 
+// ---- CATEGORIES ----
+let allCategoriesAdmin = [];
+let editingCategoryId = null;
+let categoryImageData = null;
+
+async function loadCategories(){
+  allCategoriesAdmin = await api('/api/categories');
+  renderCategoryList();
+  renderCategoryDropdown();
+}
+function renderCategoryDropdown(){
+  const sel = document.getElementById('p_category');
+  const current = sel.value;
+  sel.innerHTML = '<option value="">Select a category…</option>' +
+    allCategoriesAdmin.map(c => `<option value="${c.id}">${esc(c.name)}</option>`).join('');
+  if (current) sel.value = current;
+}
+function renderCategoryList(){
+  const wrap = document.getElementById('categoryList');
+  if (!allCategoriesAdmin.length){ wrap.innerHTML = '<div class="empty">No categories yet.</div>'; return; }
+  wrap.innerHTML = '';
+  allCategoriesAdmin.forEach(c => {
+    const row = document.createElement('div'); row.className = 'item';
+    row.innerHTML = `${c.image ? `<img class="thumb" src="${c.image}" alt="">` : `<div class="thumb" style="display:flex;align-items:center;justify-content:center;">🌿</div>`}
+      <div class="item-body"><div class="item-title">${esc(c.name)}</div></div>`;
+    const actions = document.createElement('div'); actions.className = 'item-actions';
+    const edit = document.createElement('button'); edit.className='btn btn-ghost btn-sm'; edit.textContent='Edit';
+    edit.onclick = () => startEditCategory(c);
+    const del = document.createElement('button'); del.className='btn btn-danger btn-sm'; del.textContent='Delete';
+    del.onclick = async () => { await api('/api/categories/'+c.id, {method:'DELETE'}); toast('Category removed'); loadCategories(); loadProducts(); };
+    actions.appendChild(edit); actions.appendChild(del);
+    row.appendChild(actions);
+    wrap.appendChild(row);
+  });
+}
+function startEditCategory(c){
+  editingCategoryId = c.id;
+  document.getElementById('catFormTitle').textContent = 'Edit category';
+  document.getElementById('cat_name').value = c.name;
+  categoryImageData = c.image || null;
+  const preview = document.getElementById('catImagePreview');
+  if (c.image){ preview.src = c.image; preview.style.display = 'block'; } else { preview.style.display = 'none'; }
+  document.getElementById('saveCategoryBtn').textContent = 'Save changes';
+  document.getElementById('cancelCategoryEditBtn').style.display = 'inline-flex';
+}
+function resetCategoryForm(){
+  editingCategoryId = null;
+  categoryImageData = null;
+  document.getElementById('catFormTitle').textContent = 'Add a category';
+  document.getElementById('cat_name').value = '';
+  document.getElementById('catImagePreview').style.display = 'none';
+  document.getElementById('saveCategoryBtn').textContent = 'Add category';
+  document.getElementById('cancelCategoryEditBtn').style.display = 'none';
+}
+document.getElementById('cancelCategoryEditBtn').onclick = resetCategoryForm;
+document.getElementById('catImageBtn').onclick = () => document.getElementById('catImageInput').click();
+document.getElementById('catImageInput').onchange = async (e) => {
+  const file = e.target.files[0]; if (!file) return;
+  categoryImageData = await new Promise((resolve,reject)=>{ const r=new FileReader(); r.onload=()=>resolve(r.result); r.onerror=reject; r.readAsDataURL(file); });
+  const preview = document.getElementById('catImagePreview');
+  preview.src = categoryImageData; preview.style.display = 'block';
+};
+document.getElementById('saveCategoryBtn').onclick = async () => {
+  const name = document.getElementById('cat_name').value.trim();
+  if (!name){ toast('Give the category a name'); return; }
+  try{
+    if (editingCategoryId){
+      await api('/api/categories/'+editingCategoryId, { method:'PUT', body: JSON.stringify({ name, image: categoryImageData }) });
+      toast('Category updated');
+    } else {
+      await api('/api/categories', { method:'POST', body: JSON.stringify({ name, image: categoryImageData }) });
+      toast('Category added');
+    }
+    resetCategoryForm();
+    loadCategories();
+  }catch(e){ toast('Could not save: '+e.message); }
+};
+
 // ---- PRODUCTS ----
+let editingProductId = null;
+
 async function loadProducts(){
   const products = await api('/api/products');
   const wrap = document.getElementById('productList');
   if (!products.length){ wrap.innerHTML = '<div class="empty">No products yet.</div>'; return; }
   wrap.innerHTML = '';
   products.forEach(p => {
+    const catName = (allCategoriesAdmin.find(c => c.id === p.category_id) || {}).name || 'Uncategorized';
     const row = document.createElement('div'); row.className = 'item';
-    row.innerHTML = `<div class="item-body"><div class="item-title">${esc(p.icon)} ${esc(p.name)} <span style="color:var(--chili);">₹${Number(p.price||0).toFixed(0)}</span></div><div class="item-sub">${esc(p.description)}</div></div>`;
+    row.innerHTML = `<div class="item-body"><div class="item-title">${esc(p.icon)} ${esc(p.name)} <span style="color:var(--chili);">₹${Number(p.price||0).toFixed(0)}</span></div><div class="item-sub">${esc(catName)} · ${esc(p.description)}</div></div>`;
+    const actions = document.createElement('div'); actions.className = 'item-actions';
+    const edit = document.createElement('button'); edit.className='btn btn-ghost btn-sm'; edit.textContent='Edit';
+    edit.onclick = () => startEditProduct(p);
     const del = document.createElement('button'); del.className='btn btn-danger btn-sm'; del.textContent='Delete';
     del.onclick = async () => { await api('/api/products/'+p.id, {method:'DELETE'}); toast('Product removed'); loadProducts(); };
-    row.appendChild(del);
+    actions.appendChild(edit); actions.appendChild(del);
+    row.appendChild(actions);
     wrap.appendChild(row);
   });
 }
+function startEditProduct(p){
+  editingProductId = p.id;
+  document.getElementById('prodFormTitle').textContent = 'Edit product';
+  document.getElementById('p_name').value = p.name;
+  document.getElementById('p_icon').value = p.icon;
+  document.getElementById('p_price').value = p.price;
+  document.getElementById('p_desc').value = p.description;
+  document.getElementById('p_category').value = p.category_id || '';
+  document.getElementById('addProductBtn').textContent = 'Save changes';
+  document.getElementById('cancelProductEditBtn').style.display = 'inline-flex';
+}
+function resetProductForm(){
+  editingProductId = null;
+  document.getElementById('prodFormTitle').textContent = 'Add a product';
+  document.getElementById('p_name').value=''; document.getElementById('p_icon').value='';
+  document.getElementById('p_desc').value=''; document.getElementById('p_price').value='';
+  document.getElementById('p_category').value='';
+  document.getElementById('addProductBtn').textContent = 'Add product';
+  document.getElementById('cancelProductEditBtn').style.display = 'none';
+}
+document.getElementById('cancelProductEditBtn').onclick = resetProductForm;
 document.getElementById('addProductBtn').onclick = async () => {
   const name = document.getElementById('p_name').value.trim();
   const icon = document.getElementById('p_icon').value.trim() || '🌿';
   const description = document.getElementById('p_desc').value.trim();
   const price = parseFloat(document.getElementById('p_price').value) || 0;
+  const category_id = document.getElementById('p_category').value;
   if (!name){ toast('Give the product a name'); return; }
+  if (!category_id){ toast('Please select a category'); return; }
   try{
-    await api('/api/products', { method:'POST', body: JSON.stringify({name, icon, description, price}) });
-    document.getElementById('p_name').value=''; document.getElementById('p_icon').value=''; document.getElementById('p_desc').value=''; document.getElementById('p_price').value='';
-    document.getElementById('productAddNote').textContent = 'Added ✓';
+    if (editingProductId){
+      await api('/api/products/'+editingProductId, { method:'PUT', body: JSON.stringify({name, icon, description, price, category_id}) });
+      toast('Product updated');
+    } else {
+      await api('/api/products', { method:'POST', body: JSON.stringify({name, icon, description, price, category_id}) });
+      toast('Product added');
+    }
+    resetProductForm();
+    document.getElementById('productAddNote').textContent = 'Saved ✓';
     setTimeout(()=>document.getElementById('productAddNote').textContent='', 1800);
     loadProducts();
-  }catch(e){ toast('Could not add: '+e.message); }
+  }catch(e){ toast('Could not save: '+e.message); }
 };
 
 // ---- CUSTOMERS ----

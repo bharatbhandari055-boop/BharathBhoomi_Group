@@ -16,17 +16,28 @@ async function initSchema() {
     );
   `);
   await pool.query(`
+    CREATE TABLE IF NOT EXISTS categories (
+      id SERIAL PRIMARY KEY,
+      name TEXT NOT NULL,
+      image TEXT DEFAULT NULL,
+      sort_order INT DEFAULT 0,
+      created_at TIMESTAMPTZ DEFAULT now()
+    );
+  `);
+  await pool.query(`
     CREATE TABLE IF NOT EXISTS products (
       id SERIAL PRIMARY KEY,
       name TEXT NOT NULL,
       icon TEXT DEFAULT '🌿',
       description TEXT DEFAULT '',
       price NUMERIC DEFAULT 0,
+      category_id INT REFERENCES categories(id),
       sort_order INT DEFAULT 0,
       created_at TIMESTAMPTZ DEFAULT now()
     );
   `);
   await pool.query(`ALTER TABLE products ADD COLUMN IF NOT EXISTS price NUMERIC DEFAULT 0;`);
+  await pool.query(`ALTER TABLE products ADD COLUMN IF NOT EXISTS category_id INT REFERENCES categories(id);`);
   await pool.query(`
     CREATE TABLE IF NOT EXISTS customers (
       id SERIAL PRIMARY KEY,
@@ -95,19 +106,43 @@ async function initSchema() {
   `);
   await pool.query(`ALTER TABLE orders ADD COLUMN IF NOT EXISTS customer_account_id INT REFERENCES customer_accounts(id);`);
   await pool.query(`
+    CREATE TABLE IF NOT EXISTS messages (
+      id SERIAL PRIMARY KEY,
+      customer_account_id INT NOT NULL REFERENCES customer_accounts(id),
+      sender TEXT NOT NULL DEFAULT 'customer',
+      body TEXT NOT NULL,
+      read_by_customer BOOLEAN DEFAULT true,
+      created_at TIMESTAMPTZ DEFAULT now()
+    );
+  `);
+  await pool.query(`
     CREATE TABLE IF NOT EXISTS visits (
       day DATE PRIMARY KEY,
       count INT DEFAULT 0
     );
   `);
 
+  const { rows: catRows } = await pool.query('SELECT COUNT(*)::int AS n FROM categories');
+  if (catRows[0].n === 0) {
+    await pool.query(
+      `INSERT INTO categories (name, sort_order) VALUES
+       ('Naturally grown grains', 1),
+       ('Seasonal produce', 2),
+       ('Farm essentials', 3),
+       ('Dairy products', 4)`
+    );
+  }
+
   const { rows } = await pool.query('SELECT COUNT(*)::int AS n FROM products');
   if (rows[0].n === 0) {
+    const cats = await pool.query('SELECT id, name FROM categories');
+    const catId = (name) => (cats.rows.find(c => c.name === name) || {}).id || null;
     await pool.query(
-      `INSERT INTO products (name, icon, description, price, sort_order) VALUES
-       ('Naturally grown grains', '🌾', 'Millets, rice and wheat grown without synthetic inputs, sourced directly from small farms.', 249, 1),
-       ('Seasonal produce', '🥬', 'Fruits and vegetables grown in step with the seasons.', 149, 2),
-       ('Farm essentials', '🍯', 'Cold-pressed oils, raw honey, and other pantry staples.', 399, 3)`
+      `INSERT INTO products (name, icon, description, price, category_id, sort_order) VALUES
+       ('Millets & rice', '🌾', 'Millets, rice and wheat grown without synthetic inputs, sourced directly from small farms.', 249, $1, 1),
+       ('Seasonal vegetables', '🥬', 'Fruits and vegetables grown in step with the seasons.', 149, $2, 2),
+       ('Cold-pressed oil', '🍯', 'Cold-pressed oils, raw honey, and other pantry staples.', 399, $3, 3)`,
+      [catId('Naturally grown grains'), catId('Seasonal produce'), catId('Farm essentials')]
     );
   }
 

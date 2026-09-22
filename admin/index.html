@@ -55,6 +55,15 @@
   .toast{ position:fixed; bottom:20px; left:50%; transform:translateX(-50%) translateY(20px); background:var(--soil); color:var(--cream); padding:12px 22px; border-radius:100px; font-weight:700; font-size:.88rem; opacity:0; pointer-events:none; transition:all .25s ease; }
   .toast.show{opacity:1; transform:translateX(-50%) translateY(0);}
   .error-text{color:var(--chili); font-size:.85rem; margin-top:8px;}
+  .modal-overlay{ display:none; position:fixed; inset:0; background:rgba(91,58,36,0.45); z-index:100; align-items:center; justify-content:center; padding:20px; }
+  .modal-box{ background:var(--card); border-radius:24px; padding:32px; max-width:420px; width:100%; position:relative; }
+  .modal-close{ position:absolute; top:14px; right:16px; background:none; border:none; font-size:1.5rem; color:var(--soil); cursor:pointer; }
+  .category-row{ cursor:pointer; display:flex; justify-content:space-between; align-items:center; }
+  .category-row:hover{ background:var(--cream-2); }
+  .cat-caret{ display:inline-block; transition:transform .2s; margin-right:6px; }
+  .cat-caret.open{ transform:rotate(90deg); }
+  #csvViewTable th, #csvViewTable td{ border:1px solid var(--cream-2); padding:6px 10px; text-align:left; white-space:nowrap; }
+  #csvViewTable th{ background:var(--cream-2); }
 </style>
 </head>
 <body>
@@ -187,7 +196,10 @@
       <div id="threadList"><div class="empty">Loading…</div></div>
     </div>
     <div class="card" id="threadDetailCard" style="display:none;">
-      <h2 id="threadCustomerName"></h2>
+      <div style="display:flex; justify-content:space-between; align-items:center;">
+        <h2 id="threadCustomerName"></h2>
+        <button type="button" id="closeThreadBtn" class="btn btn-ghost btn-sm" style="cursor:pointer;">✕</button>
+      </div>
       <div id="threadMessages" class="msg-thread"></div>
       <form id="replyForm" style="display:flex; gap:8px; margin-top:14px;">
         <input id="reply_body" placeholder="Type a reply…" style="flex:1; padding:11px 14px; border-radius:14px; border:2px solid var(--cream-2); background:var(--cream);">
@@ -207,7 +219,6 @@
       <div id="salesList" style="margin-top:10px;"><div class="empty">No orders yet.</div></div>
     </div>
     <div class="card">
-          <div class="card">
       <h2>Order Milestones</h2>
       <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap; margin-bottom:10px;">
         <input type="date" id="ordersDateFilter">
@@ -216,11 +227,26 @@
       </div>
       <div id="ordersList" style="margin-top:10px;"><div class="empty">No orders yet.</div></div>
     </div>
+    <div class="card">
+      <h2>Sales dashboard</h2>
+      <p class="muted" style="margin-top:-6px;">Click a bar to view that category's order details.</p>
+      <div id="salesChart" style="display:flex; align-items:flex-end; gap:18px; height:200px; padding:20px 6px 0; border-bottom:2px solid var(--cream-2);"></div>
+    </div>
   </section>
 </main>
 </div>
 
 <div class="toast" id="toast"></div>
+
+<div class="modal-overlay" id="csvViewModal">
+  <div class="modal-box" style="max-width:720px;">
+    <button type="button" class="modal-close" onclick="closeModal('csvViewModal')">×</button>
+    <h3 id="csvViewTitle">Category orders</h3>
+    <div style="overflow-x:auto; max-height:60vh;">
+      <table id="csvViewTable" style="width:100%; border-collapse:collapse; font-size:.85rem;"></table>
+    </div>
+  </div>
+</div>
 
 <script>
 const API = '';
@@ -228,6 +254,8 @@ let token = localStorage.getItem('bb_admin_token') || null;
 let contentDoc = {};
 
 function toast(msg){ const t=document.getElementById('toast'); t.textContent=msg; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'),2200); }
+function openModal(id){ document.getElementById(id).style.display = 'flex'; }
+function closeModal(id){ document.getElementById(id).style.display = 'none'; }
 function esc(s){ return String(s==null?'':s).replace(/[&<>"']/g, m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); }
 function authHeaders(){ return { 'Content-Type':'application/json', 'Authorization': 'Bearer '+token }; }
 
@@ -301,22 +329,8 @@ async function loadReports(){
 
     const orders = await api('/api/orders');
     lastOrders = orders;
-        const ordersList = document.getElementById('ordersList');
-    const productCounts = {};
-    orders.forEach(o => (o.items||[]).forEach(i => {
-      productCounts[i.name] = (productCounts[i.name]||0) + (Number(i.quantity)||0);
-    }));
-    const productNames = Object.keys(productCounts);
-    if (!productNames.length){ ordersList.innerHTML = '<div class="empty">No orders yet.</div>'; }
-    else {
-      ordersList.innerHTML = '';
-      productNames.sort((a,b) => productCounts[b]-productCounts[a]).forEach(name => {
-        const row = document.createElement('div'); row.className = 'item';
-        row.innerHTML = `<div class="item-body"><div class="item-title">${esc(name)}</div></div><div class="item-sub">${productCounts[name]} sold</div>`;
-        ordersList.appendChild(row);
-      });
-    }
-    // Sales by category: map product name -> category name via current product list
+
+    // map product name -> category name via current product list
     const nameToCategory = {};
     try{
       const products = await api('/api/products');
@@ -324,6 +338,50 @@ async function loadReports(){
       allCategoriesAdmin.forEach(c => catById[c.id] = c.name);
       products.forEach(p => { nameToCategory[p.name] = catById[p.category_id] || 'Uncategorized'; });
     }catch(e){}
+
+    // Group order counts by category, then by product within category
+    const catTotals = {};        // { category: totalQty }
+    const catProducts = {};      // { category: { productName: qty } }
+    const catOrders = {};        // { category: [order, ...] } (for CSV view)
+    orders.forEach(o => (o.items||[]).forEach(i => {
+      const cat = nameToCategory[i.name] || 'Uncategorized';
+      const qty = Number(i.quantity)||0;
+      catTotals[cat] = (catTotals[cat]||0) + qty;
+      if (!catProducts[cat]) catProducts[cat] = {};
+      catProducts[cat][i.name] = (catProducts[cat][i.name]||0) + qty;
+      if (!catOrders[cat]) catOrders[cat] = [];
+      if (!catOrders[cat].includes(o)) catOrders[cat].push(o);
+    }));
+    window.__catTotals = catTotals;
+    window.__catOrders = catOrders;
+
+    const ordersList = document.getElementById('ordersList');
+    const catNames = Object.keys(catTotals);
+    if (!catNames.length){ ordersList.innerHTML = '<div class="empty">No orders yet.</div>'; }
+    else {
+      ordersList.innerHTML = '';
+      catNames.sort((a,b) => catTotals[b]-catTotals[a]).forEach(cat => {
+        const row = document.createElement('div'); row.className = 'item category-row';
+        row.innerHTML = `<div class="item-body"><div class="item-title"><span class="cat-caret">▸</span>${esc(cat)}</div></div><div class="item-sub">${catTotals[cat]} sold</div>`;
+        const productsWrap = document.createElement('div');
+        productsWrap.style.display = 'none';
+        productsWrap.style.paddingLeft = '22px';
+        Object.keys(catProducts[cat]).sort((a,b)=>catProducts[cat][b]-catProducts[cat][a]).forEach(pName => {
+          const pRow = document.createElement('div'); pRow.className = 'item';
+          pRow.innerHTML = `<div class="item-body"><div class="item-title">${esc(pName)}</div></div><div class="item-sub">${catProducts[cat][pName]} sold</div>`;
+          productsWrap.appendChild(pRow);
+        });
+        row.onclick = () => {
+          const open = productsWrap.style.display !== 'none';
+          productsWrap.style.display = open ? 'none' : 'block';
+          row.querySelector('.cat-caret').classList.toggle('open', !open);
+        };
+        ordersList.appendChild(row);
+        ordersList.appendChild(productsWrap);
+      });
+    }
+
+    renderSalesChart(catTotals);
 
     const bySales = {};
     orders.forEach(o => (o.items||[]).forEach(i => {
@@ -345,6 +403,39 @@ async function loadReports(){
       });
     }
   }catch(e){ console.error(e); }
+}
+
+function renderSalesChart(catTotals){
+  const wrap = document.getElementById('salesChart');
+  wrap.innerHTML = '';
+  const names = Object.keys(catTotals);
+  if (!names.length){ wrap.innerHTML = '<div class="empty">No orders yet.</div>'; return; }
+  const max = Math.max(...names.map(n => catTotals[n]));
+  names.sort((a,b) => catTotals[b]-catTotals[a]).forEach(name => {
+    const pct = max ? (catTotals[name]/max)*100 : 0;
+    const barWrap = document.createElement('div');
+    barWrap.style.cssText = 'display:flex; flex-direction:column; align-items:center; gap:8px; flex:1; cursor:pointer;';
+    barWrap.innerHTML = `
+      <div style="font-weight:700; font-size:.8rem;">${catTotals[name]}</div>
+      <div style="width:100%; max-width:52px; height:${Math.max(pct,4)}%; background:var(--leaf); border-radius:10px 10px 0 0;"></div>
+      <div style="font-size:.75rem; text-align:center; color:var(--soil);">${esc(name)}</div>`;
+    barWrap.onclick = () => openCsvView(name);
+    wrap.appendChild(barWrap);
+  });
+}
+
+function openCsvView(catName){
+  const orders = (window.__catOrders && window.__catOrders[catName]) || [];
+  document.getElementById('csvViewTitle').textContent = catName + ' — order details';
+  const table = document.getElementById('csvViewTable');
+  const headers = ['Order ID','Customer','Email','Items','Total','Date'];
+  let html = '<tr>' + headers.map(h=>`<th>${h}</th>`).join('') + '</tr>';
+  orders.forEach(o => {
+    const itemsText = (o.items||[]).map(i => `${i.name} x${i.quantity}`).join(', ');
+    html += `<tr><td>${o.id}</td><td>${esc(o.customer_name)}</td><td>${esc(o.customer_email)}</td><td>${esc(itemsText)}</td><td>₹${Number(o.total).toFixed(0)}</td><td>${new Date(o.created_at).toLocaleString()}</td></tr>`;
+  });
+  table.innerHTML = html;
+  openModal('csvViewModal');
 }
 
 // ---- CSV EXPORT ----
@@ -387,6 +478,7 @@ document.getElementById('downloadSalesBtn').onclick = () => {
   Object.keys(bySales).forEach(name => rows.push([name, bySales[name].qty, bySales[name].revenue]));
   downloadCsv('sales-by-category.csv', rows);
 };
+
 // ---- MESSAGES ----
 let activeThreadCustomerId = null;
 async function loadThreads(){
@@ -431,6 +523,10 @@ document.getElementById('replyForm').addEventListener('submit', async (e) => {
     toast('Reply sent');
   }catch(err){ toast('Could not send: '+err.message); }
 });
+document.getElementById('closeThreadBtn').onclick = () => {
+  document.getElementById('threadDetailCard').style.display = 'none';
+  activeThreadCustomerId = null;
+};
 async function loadContent(){
   contentDoc = await api('/api/content');
   document.getElementById('c_badge').value = contentDoc.badge || '';

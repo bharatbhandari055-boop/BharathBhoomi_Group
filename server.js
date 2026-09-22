@@ -12,10 +12,9 @@ app.use('/api/auth', require('./routes/auth'));
 app.use('/api/customer-auth', require('./routes/customerAuth'));
 app.use('/api/content', require('./routes/content'));
 app.use('/api/products', require('./routes/products'));
-app.use('/api/categories', require('./routes/categories'));
-app.use('/api/messages', require('./routes/messages'));
 app.use('/api/customers', require('./routes/customers'));
 app.use('/api/orders', require('./routes/orders'));
+app.use('/api/notifications', require('./routes/notifications'));
 app.use('/api/analytics', require('./routes/analytics'));
 
 // Serve the public site at "/"

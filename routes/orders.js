@@ -33,6 +33,30 @@ router.get('/', requireAuth, async (req, res) => {
 // Statuses an order can no longer be cancelled from
 const NOT_CANCELLABLE_FROM = ['delivered', 'return_requested', 'returned', 'cancelled'];
 
+// Customer-facing copy for each status, used in on-site notifications
+const STATUS_MESSAGES = {
+  placed: 'has been placed.',
+  packed: 'has been packed.',
+  picked_up: 'has been picked up for delivery.',
+  on_the_way: 'is on the way!',
+  delivered: 'has been delivered.',
+  cancelled: 'has been cancelled.',
+  return_requested: 'return request has been received.',
+  returned: 'return has been completed.',
+};
+
+const RETURN_WINDOW_MS = 24 * 60 * 60 * 1000; // 24 hours
+
+async function notifyCustomer(order, status) {
+  if (!order.customer_account_id) return; // guest checkout — nowhere to deliver the notification
+  const copy = STATUS_MESSAGES[status] || `status changed to ${status}`;
+  const body = `Order #${order.id} ${copy}`;
+  await pool.query(
+    `INSERT INTO notifications (customer_account_id, order_id, title, body) VALUES ($1,$2,$3,$4)`,
+    [order.customer_account_id, order.id, `Order #${order.id}`, body]
+  );
+}
+
 // Admin only: move an order to a new status
 router.patch('/:id/status', requireAuth, async (req, res) => {
   const { status } = req.body || {};
@@ -50,6 +74,7 @@ router.patch('/:id/status', requireAuth, async (req, res) => {
     `UPDATE orders SET status = $1, status_updated_at = now() WHERE id = $2 RETURNING *`,
     [status, req.params.id]
   );
+  await notifyCustomer(rows[0], status).catch(err => console.error('notifyCustomer failed:', err.message));
   res.json(rows[0]);
 });
 
@@ -61,6 +86,11 @@ router.post('/:id/return', requireCustomerAuth, async (req, res) => {
   if (!order) return res.status(404).json({ error: 'Order not found' });
   if (order.customer_account_id !== req.customer.id) return res.status(403).json({ error: 'Not your order' });
   if (order.status !== 'delivered') return res.status(400).json({ error: 'Only delivered orders can be returned' });
+
+  const deliveredAt = new Date(order.status_updated_at).getTime();
+  if (Date.now() - deliveredAt > RETURN_WINDOW_MS) {
+    return res.status(400).json({ error: 'The 24-hour return window for this order has passed' });
+  }
 
   const { rows: updated } = await pool.query(
     `UPDATE orders SET status = 'return_requested', status_updated_at = now(), return_reason = $1 WHERE id = $2 RETURNING *`,

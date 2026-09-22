@@ -124,6 +124,17 @@ async function initSchema() {
     );
   `);
   await pool.query(`
+    CREATE TABLE IF NOT EXISTS notifications (
+      id SERIAL PRIMARY KEY,
+      customer_account_id INT NOT NULL REFERENCES customer_accounts(id),
+      order_id INT REFERENCES orders(id),
+      title TEXT NOT NULL,
+      body TEXT NOT NULL,
+      is_read BOOLEAN DEFAULT false,
+      created_at TIMESTAMPTZ DEFAULT now()
+    );
+  `);
+  await pool.query(`
     CREATE TABLE IF NOT EXISTS visits (
       day DATE PRIMARY KEY,
       count INT DEFAULT 0

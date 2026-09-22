@@ -245,6 +245,14 @@
   </div>
 </div>
 
+<div class="modal-overlay" id="notificationsModal">
+  <div class="modal-box">
+    <button type="button" class="modal-close" onclick="closeModal('notificationsModal')">×</button>
+    <h3>Notifications</h3>
+    <div id="notificationsList"><p class="muted">Loading…</p></div>
+  </div>
+</div>
+
 <div class="modal-overlay" id="myOrdersModal">
   <div class="modal-box">
     <button type="button" class="modal-close" onclick="closeModal('myOrdersModal')">×</button>
@@ -500,6 +508,12 @@ loadContent();
 loadCategoriesAndProducts();
 initAuth();
 
+// While signed in (and hasn't logged out), quietly refresh the notification/message
+// badges every 30s so status changes surface without a page reload.
+setInterval(() => {
+  if (getCustomer()) { checkUnreadNotifications(); checkUnreadMessages(); }
+}, 30000);
+
 // Log a visit once per browser session
 try {
   if (!sessionStorage.getItem('bb_visit_logged')) {
@@ -530,10 +544,12 @@ function renderAuthArea(){
   const c = getCustomer();
   if (c){
     area.innerHTML = `<span class="auth-hi">Hi, ${esc(c.name)}</span>
+      <button type="button" class="btn btn-ghost btn-sm cart-btn" onclick="openNotifications()">🔔 <span id="notifBadge" class="cart-badge" style="display:none;">0</span></button>
       <button type="button" class="btn btn-ghost btn-sm cart-btn" onclick="openMessages()">💬 <span id="msgBadge" class="cart-badge" style="display:none;">0</span></button>
       <button type="button" class="btn btn-ghost btn-sm" onclick="openMyOrders()">My orders</button>
       <button type="button" class="btn btn-ghost btn-sm" onclick="clearCustomer()">Log out</button>`;
     checkUnreadMessages();
+    checkUnreadNotifications();
   } else {
     area.innerHTML = `<button type="button" class="btn btn-ghost btn-sm" onclick="openModal('signInModal')">Sign in</button>
       <button type="button" class="btn btn-primary btn-sm" onclick="openModal('signUpModal')">Sign up</button>`;
@@ -601,7 +617,12 @@ async function openMyOrders(){
     wrap.innerHTML = orders.map(o => {
       const items = (o.items||[]).map(i => `${esc(i.name)} ×${i.quantity}`).join(', ');
       const delivery = o.delivery_date ? new Date(o.delivery_date).toLocaleDateString() : '—';
-      const canReturn = o.status === 'delivered';
+      const RETURN_WINDOW_HOURS = 24;
+      const hoursSinceDelivered = (o.status === 'delivered' && o.status_updated_at)
+        ? (Date.now() - new Date(o.status_updated_at).getTime()) / 36e5
+        : null;
+      const canReturn = hoursSinceDelivered !== null && hoursSinceDelivered <= RETURN_WINDOW_HOURS;
+      const returnWindowClosed = hoursSinceDelivered !== null && hoursSinceDelivered > RETURN_WINDOW_HOURS;
       return `<div style="border-bottom:1px solid var(--cream-2); padding:12px 0;">
         <div style="display:flex; justify-content:space-between; gap:10px; flex-wrap:wrap;">
           <strong>#${o.id}</strong>
@@ -610,6 +631,7 @@ async function openMyOrders(){
         <div class="muted" style="margin:4px 0;">${items} — ₹${Number(o.total).toFixed(0)}</div>
         <div class="muted">Ordered ${new Date(o.created_at).toLocaleDateString()} · Expected delivery: ${delivery}</div>
         ${canReturn ? `<button type="button" class="btn btn-ghost btn-sm" style="margin-top:8px;" onclick="requestReturn(${o.id})">Request return</button>` : ''}
+        ${returnWindowClosed ? `<div class="muted" style="margin-top:6px; font-size:.8rem;">Return window (24 hours from delivery) has closed.</div>` : ''}
       </div>`;
     }).join('');
   }catch(err){ wrap.innerHTML = `<p class="muted">${esc(err.message)}</p>`; }
@@ -629,6 +651,44 @@ async function requestReturn(orderId){
     toast('Return requested');
     openMyOrders();
   }catch(err){ toast(err.message); }
+}
+
+async function checkUnreadNotifications(){
+  const c = getCustomer();
+  if (!c) return;
+  try{
+    const res = await fetch(API + '/api/notifications/mine/unread-count', { headers: { 'Authorization': 'Bearer ' + c.token } });
+    const data = await res.json();
+    const badge = document.getElementById('notifBadge');
+    if (badge){
+      badge.textContent = data.count;
+      badge.style.display = data.count ? 'inline-flex' : 'none';
+    }
+  }catch(e){}
+}
+
+async function openNotifications(){
+  openModal('notificationsModal');
+  const wrap = document.getElementById('notificationsList');
+  wrap.innerHTML = '<p class="muted">Loading…</p>';
+  const c = getCustomer();
+  if (!c) return;
+  try{
+    const res = await fetch(API + '/api/notifications/mine', { headers: { 'Authorization': 'Bearer ' + c.token } });
+    const items = await res.json();
+    if (!res.ok) throw new Error(items.error || 'Could not load notifications');
+    if (!items.length){ wrap.innerHTML = '<p class="muted">No notifications yet.</p>'; }
+    else {
+      wrap.innerHTML = items.map(n => `
+        <div style="border-bottom:1px solid var(--cream-2); padding:10px 0; ${n.is_read ? '' : 'font-weight:700;'}">
+          <div>${esc(n.body)}</div>
+          <div class="muted" style="font-size:.78rem; margin-top:2px; font-weight:400;">${new Date(n.created_at).toLocaleString()}</div>
+        </div>`).join('');
+    }
+    fetch(API + '/api/notifications/mine/mark-read', { method:'POST', headers: { 'Authorization': 'Bearer ' + c.token } }).catch(()=>{});
+    const badge = document.getElementById('notifBadge');
+    if (badge) badge.style.display = 'none';
+  }catch(err){ wrap.innerHTML = `<p class="muted">${esc(err.message)}</p>`; }
 }
 
 async function checkUnreadMessages(){

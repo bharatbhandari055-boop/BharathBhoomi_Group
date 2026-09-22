@@ -30,15 +30,26 @@ router.get('/', requireAuth, async (req, res) => {
   res.json(rows);
 });
 
+// Statuses an order can no longer be cancelled from
+const NOT_CANCELLABLE_FROM = ['delivered', 'return_requested', 'returned', 'cancelled'];
+
 // Admin only: move an order to a new status
 router.patch('/:id/status', requireAuth, async (req, res) => {
   const { status } = req.body || {};
   if (!VALID_STATUSES.includes(status)) return res.status(400).json({ error: 'Invalid status' });
+
+  const { rows: existingRows } = await pool.query('SELECT * FROM orders WHERE id = $1', [req.params.id]);
+  const existing = existingRows[0];
+  if (!existing) return res.status(404).json({ error: 'Not found' });
+
+  if (status === 'cancelled' && NOT_CANCELLABLE_FROM.includes(existing.status)) {
+    return res.status(400).json({ error: `Order cannot be cancelled once it is ${existing.status}` });
+  }
+
   const { rows } = await pool.query(
     `UPDATE orders SET status = $1, status_updated_at = now() WHERE id = $2 RETURNING *`,
     [status, req.params.id]
   );
-  if (!rows[0]) return res.status(404).json({ error: 'Not found' });
   res.json(rows[0]);
 });
 

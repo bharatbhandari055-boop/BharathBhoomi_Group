@@ -229,6 +229,7 @@
         <button class="order-subtab" data-status="on_the_way">On the Way</button>
         <button class="order-subtab" data-status="delivered">Delivered</button>
         <button class="order-subtab" data-status="return">Return</button>
+        <button class="order-subtab" data-status="cancelled">Cancelled</button>
       </div>
       <div id="orderMgmtList"><div class="empty">Loading…</div></div>
     </div>
@@ -413,6 +414,7 @@ const STATUS_LABELS = {
   delivered:'Delivered', cancelled:'Cancelled', return_requested:'Return Requested', returned:'Returned'
 };
 const STATUS_ORDER = ['placed','packed','picked_up','on_the_way','delivered'];
+const NOT_CANCELLABLE = ['delivered','return_requested','returned','cancelled'];
 let orderMgmtOrders = [];
 let activeOrderSubtab = 'all';
 
@@ -495,10 +497,12 @@ function renderOrderList(){
         btn.onclick = () => updateOrderStatus(o.id, next);
         actions.appendChild(btn);
       }
-      if (o.status === 'placed'){
+      if (!NOT_CANCELLABLE.includes(o.status)){
         const cancel = document.createElement('button');
         cancel.className = 'btn btn-danger btn-sm'; cancel.textContent = 'Cancel order';
-        cancel.onclick = () => updateOrderStatus(o.id, 'cancelled');
+        cancel.onclick = () => {
+          if (confirm(`Cancel order #${o.id}? This can't be undone.`)) updateOrderStatus(o.id, 'cancelled');
+        };
         actions.appendChild(cancel);
       }
     }

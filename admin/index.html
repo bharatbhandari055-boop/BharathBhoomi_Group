@@ -47,6 +47,25 @@
   .msg-admin{ background:var(--cream-2); color:var(--soil); align-self:flex-start; }
   .msg-sender{ font-weight:700; font-size:.75rem; opacity:.8; margin-bottom:2px; }
   .msg-time{ font-size:.7rem; opacity:.65; margin-top:4px; }
+  .funnel{ display:flex; flex-direction:column; gap:10px; }
+  .funnel-row{ display:grid; grid-template-columns:110px 1fr 40px; align-items:center; gap:10px; }
+  .funnel-label{ font-weight:700; font-size:.85rem; color:var(--leaf-dark); }
+  .funnel-bar-track{ background:var(--cream-2); border-radius:100px; height:16px; overflow:hidden; }
+  .funnel-bar-fill{ background:var(--leaf); height:100%; border-radius:100px; transition:width .3s; }
+  .funnel-bar-fill.is-return{ background:var(--chili); }
+  .funnel-count{ font-weight:700; text-align:right; font-size:.9rem; }
+  .order-subtabs{ display:flex; gap:6px; overflow-x:auto; margin-bottom:18px; }
+  .order-subtab{ flex:0 0 auto; padding:8px 14px; border-radius:100px; border:2px solid var(--cream-2); background:var(--cream); font-weight:700; font-size:.85rem; cursor:pointer; white-space:nowrap; }
+  .order-subtab.active{ background:var(--leaf); color:#fff; border-color:var(--leaf); }
+  .order-card{ background:var(--cream); border-radius:16px; padding:16px; margin-bottom:12px; }
+  .order-card-top{ display:flex; justify-content:space-between; align-items:flex-start; gap:10px; flex-wrap:wrap; }
+  .order-card-id{ font-family:'Fredoka'; font-weight:700; color:var(--leaf-dark); }
+  .order-status-pill{ font-size:.75rem; font-weight:700; padding:4px 12px; border-radius:100px; background:var(--turmeric); color:var(--soil); }
+  .order-status-pill.st-delivered{ background:var(--leaf); color:#fff; }
+  .order-status-pill.st-return_requested, .order-status-pill.st-returned{ background:var(--chili); color:#fff; }
+  .order-status-pill.st-cancelled{ background:#bbb; color:#fff; }
+  .order-card-meta{ font-size:.85rem; color:#7a6650; margin-top:8px; line-height:1.6; }
+  .order-card-actions{ margin-top:12px; display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
   .tag-pill{display:inline-flex; align-items:center; gap:6px; background:var(--cream-2); padding:6px 12px; border-radius:100px; font-size:.85rem; font-weight:700; margin:4px 6px 0 0;}
   .tag-pill button{background:none; border:none; color:var(--chili); font-weight:700;}
   .gate{display:flex; align-items:center; justify-content:center; min-height:100vh; padding:20px;}
@@ -55,18 +74,6 @@
   .toast{ position:fixed; bottom:20px; left:50%; transform:translateX(-50%) translateY(20px); background:var(--soil); color:var(--cream); padding:12px 22px; border-radius:100px; font-weight:700; font-size:.88rem; opacity:0; pointer-events:none; transition:all .25s ease; }
   .toast.show{opacity:1; transform:translateX(-50%) translateY(0);}
   .error-text{color:var(--chili); font-size:.85rem; margin-top:8px;}
-  #bufferIndicator{ display:none; position:fixed; top:16px; right:16px; z-index:300; align-items:center; gap:8px; background:var(--card); border:2px solid var(--leaf); padding:8px 16px; border-radius:100px; box-shadow:0 6px 16px rgba(91,58,36,0.15); font-weight:700; font-size:.82rem; color:var(--leaf-dark); }
-  .spinner{ width:16px; height:16px; border:3px solid var(--cream-2); border-top-color:var(--leaf); border-radius:50%; animation:spin .7s linear infinite; }
-  @keyframes spin{ to{ transform:rotate(360deg); } }
-  .modal-overlay{ display:none; position:fixed; inset:0; background:rgba(91,58,36,0.45); z-index:100; align-items:center; justify-content:center; padding:20px; }
-  .modal-box{ background:var(--card); border-radius:24px; padding:32px; max-width:420px; width:100%; position:relative; }
-  .modal-close{ position:absolute; top:14px; right:16px; background:none; border:none; font-size:1.5rem; color:var(--soil); cursor:pointer; }
-  .category-row{ cursor:pointer; display:flex; justify-content:space-between; align-items:center; }
-  .category-row:hover{ background:var(--cream-2); }
-  .cat-caret{ display:inline-block; transition:transform .2s; margin-right:6px; }
-  .cat-caret.open{ transform:rotate(90deg); }
-  #csvViewTable th, #csvViewTable td{ border:1px solid var(--cream-2); padding:6px 10px; text-align:left; white-space:nowrap; }
-  #csvViewTable th{ background:var(--cream-2); }
 </style>
 </head>
 <body>
@@ -94,6 +101,7 @@
     <button class="tab" data-tab="products">Products</button>
     <button class="tab" data-tab="customers">Customers</button>
     <button class="tab" data-tab="messages">Messages</button>
+    <button class="tab" data-tab="orders">Orders</button>
     <button class="tab" data-tab="reports">Reports</button>
   </div>
 </header>
@@ -199,15 +207,30 @@
       <div id="threadList"><div class="empty">Loading…</div></div>
     </div>
     <div class="card" id="threadDetailCard" style="display:none;">
-      <div style="display:flex; justify-content:space-between; align-items:center;">
-        <h2 id="threadCustomerName"></h2>
-        <button type="button" id="closeThreadBtn" class="btn btn-ghost btn-sm" style="cursor:pointer;">✕</button>
-      </div>
+      <h2 id="threadCustomerName"></h2>
       <div id="threadMessages" class="msg-thread"></div>
       <form id="replyForm" style="display:flex; gap:8px; margin-top:14px;">
         <input id="reply_body" placeholder="Type a reply…" style="flex:1; padding:11px 14px; border-radius:14px; border:2px solid var(--cream-2); background:var(--cream);">
         <button type="submit" class="btn btn-primary btn-sm">Reply</button>
       </form>
+    </div>
+  </section>
+  <section class="panel" id="panel-orders">
+    <div class="card">
+      <h2>Order flow</h2>
+      <div id="orderFunnel" class="funnel"></div>
+    </div>
+    <div class="card">
+      <div class="order-subtabs" id="orderSubtabs">
+        <button class="order-subtab active" data-status="all">All</button>
+        <button class="order-subtab" data-status="placed">Placed</button>
+        <button class="order-subtab" data-status="packed">Packed</button>
+        <button class="order-subtab" data-status="picked_up">Picked Up</button>
+        <button class="order-subtab" data-status="on_the_way">On the Way</button>
+        <button class="order-subtab" data-status="delivered">Delivered</button>
+        <button class="order-subtab" data-status="return">Return</button>
+      </div>
+      <div id="orderMgmtList"><div class="empty">Loading…</div></div>
     </div>
   </section>
   <section class="panel" id="panel-reports">
@@ -222,24 +245,9 @@
       <div id="salesList" style="margin-top:10px;"><div class="empty">No orders yet.</div></div>
     </div>
     <div class="card">
-      <h2>Order Milestones</h2>
-      <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap; margin-bottom:10px;">
-        <input type="date" id="ordersDateFilter">
-        <button class="btn btn-ghost btn-sm" id="downloadOrdersBtn" type="button">Download CSV (selected date)</button>
-        <button class="btn btn-ghost btn-sm" id="fetchAllOrdersBtn" type="button">Fetch All</button>
-      </div>
+      <h2>Recent orders</h2>
+      <button class="btn btn-ghost btn-sm" id="downloadOrdersBtn" type="button">Download CSV</button>
       <div id="ordersList" style="margin-top:10px;"><div class="empty">No orders yet.</div></div>
-    </div>
-    <div class="card">
-      <h2>Sales dashboard</h2>
-      <p class="muted" style="margin-top:-6px;">Click a bar to view that category's order details. Hover a bar for a quick summary.</p>
-      <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap; margin-bottom:14px; justify-content:flex-start;">
-        <label class="muted" style="font-size:.8rem;">From <input type="date" id="chartFrom" style="margin-left:4px;"></label>
-        <label class="muted" style="font-size:.8rem;">To <input type="date" id="chartTo" style="margin-left:4px;"></label>
-        <button class="btn btn-ghost btn-sm" id="chartApplyBtn" type="button">Apply</button>
-        <button class="btn btn-primary btn-sm" id="chartAllTimeBtn" type="button">All time (current)</button>
-      </div>
-      <div id="salesChart" style="display:flex; align-items:flex-end; gap:18px; padding:20px 6px 0; border-bottom:2px solid var(--cream-2);"></div>
     </div>
   </section>
 </main>
@@ -247,49 +255,20 @@
 
 <div class="toast" id="toast"></div>
 
-<div id="bufferIndicator"><span class="spinner"></span> Updating…</div>
-
-<div class="modal-overlay" id="csvViewModal">
-  <div class="modal-box" style="max-width:720px;">
-    <button type="button" class="modal-close" onclick="closeModal('csvViewModal')">×</button>
-    <h3 id="csvViewTitle">Category orders</h3>
-    <div style="overflow-x:auto; max-height:60vh;">
-      <table id="csvViewTable" style="width:100%; border-collapse:collapse; font-size:.85rem;"></table>
-    </div>
-  </div>
-</div>
-
 <script>
 const API = '';
 let token = localStorage.getItem('bb_admin_token') || null;
 let contentDoc = {};
 
 function toast(msg){ const t=document.getElementById('toast'); t.textContent=msg; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'),2200); }
-function openModal(id){ document.getElementById(id).style.display = 'flex'; }
-function closeModal(id){ document.getElementById(id).style.display = 'none'; }
 function esc(s){ return String(s==null?'':s).replace(/[&<>"']/g, m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); }
 function authHeaders(){ return { 'Content-Type':'application/json', 'Authorization': 'Bearer '+token }; }
 
-let requestsInFlight = 0;
-function showBuffering(){
-  requestsInFlight++;
-  document.getElementById('bufferIndicator').style.display = 'flex';
-}
-function hideBuffering(){
-  requestsInFlight = Math.max(0, requestsInFlight - 1);
-  if (requestsInFlight === 0) document.getElementById('bufferIndicator').style.display = 'none';
-}
-
 async function api(path, opts={}){
-  showBuffering();
-  try{
-    const res = await fetch(API+path, Object.assign({headers: authHeaders()}, opts));
-    if (res.status === 401){ signOut(); throw new Error('unauthorized'); }
-    if (!res.ok){ const b = await res.json().catch(()=>({})); throw new Error(b.error||'Request failed'); }
-    return res.status === 204 ? null : res.json();
-  } finally {
-    hideBuffering();
-  }
+  const res = await fetch(API+path, Object.assign({headers: authHeaders()}, opts));
+  if (res.status === 401){ signOut(); throw new Error('unauthorized'); }
+  if (!res.ok){ const b = await res.json().catch(()=>({})); throw new Error(b.error||'Request failed'); }
+  return res.status === 204 ? null : res.json();
 }
 
 function signOut(){
@@ -314,17 +293,12 @@ document.getElementById('loginBtn').onclick = async () => {
 };
 document.getElementById('logoutBtn').onclick = signOut;
 
-let reportsPollTimer = null;
 document.querySelectorAll('.tab').forEach(tab => {
   tab.onclick = () => {
     document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
     document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
     tab.classList.add('active');
     document.getElementById('panel-'+tab.dataset.tab).classList.add('active');
-    if (reportsPollTimer){ clearInterval(reportsPollTimer); reportsPollTimer = null; }
-    if (tab.dataset.tab === 'reports'){
-      reportsPollTimer = setInterval(() => { loadReports().catch(()=>{}); }, 25000);
-    }
   };
 });
 
@@ -338,6 +312,7 @@ async function startApp(){
     await loadCustomers();
     await loadReports();
     await loadThreads();
+    await loadOrderManagement();
   }catch(e){ /* handled by api() */ }
 }
 
@@ -360,8 +335,20 @@ async function loadReports(){
 
     const orders = await api('/api/orders');
     lastOrders = orders;
+    const ordersList = document.getElementById('ordersList');
+    if (!orders.length){ ordersList.innerHTML = '<div class="empty">No orders yet.</div>'; }
+    else {
+      ordersList.innerHTML = '';
+      orders.slice(0,15).forEach(o => {
+        const row = document.createElement('div'); row.className = 'item';
+        const itemsText = (o.items||[]).map(i => `${i.name} ×${i.quantity}`).join(', ');
+        const deliveryText = [o.address, o.pincode, o.landmark].filter(Boolean).join(', ');
+        row.innerHTML = `<div class="item-body"><div class="item-title">#${o.id} ${esc(o.customer_name)} — ₹${Number(o.total).toFixed(0)}</div><div class="item-sub">${esc(itemsText)} · ${new Date(o.created_at).toLocaleString()}</div><div class="item-sub">📍 ${esc(deliveryText)} · 🕒 ${esc(o.preferred_time||'Anytime')} · ✉️ ${esc(o.customer_email)}</div></div>`;
+        ordersList.appendChild(row);
+      });
+    }
 
-    // map product name -> category name via current product list
+    // Sales by category: map product name -> category name via current product list
     const nameToCategory = {};
     try{
       const products = await api('/api/products');
@@ -369,16 +356,6 @@ async function loadReports(){
       allCategoriesAdmin.forEach(c => catById[c.id] = c.name);
       products.forEach(p => { nameToCategory[p.name] = catById[p.category_id] || 'Uncategorized'; });
     }catch(e){}
-
-    window.__nameToCategory = nameToCategory;
-    const fromVal = document.getElementById('chartFrom').value;
-    const toVal = document.getElementById('chartTo').value;
-    if (fromVal || toVal){
-      applyChartFilter();
-    } else {
-      renderMilestones(orders, nameToCategory);
-      renderSalesChart(orders, nameToCategory);
-    }
 
     const bySales = {};
     orders.forEach(o => (o.items||[]).forEach(i => {
@@ -402,130 +379,6 @@ async function loadReports(){
   }catch(e){ console.error(e); }
 }
 
-function groupByCategory(orders, nameToCategory){
-  const catTotals = {}, catRevenue = {}, catProducts = {}, catOrders = {};
-  orders.forEach(o => (o.items||[]).forEach(i => {
-    const cat = nameToCategory[i.name] || 'Uncategorized';
-    const qty = Number(i.quantity)||0;
-    const rev = (Number(i.price)||0) * qty;
-    catTotals[cat] = (catTotals[cat]||0) + qty;
-    catRevenue[cat] = (catRevenue[cat]||0) + rev;
-    if (!catProducts[cat]) catProducts[cat] = {};
-    catProducts[cat][i.name] = (catProducts[cat][i.name]||0) + qty;
-    if (!catOrders[cat]) catOrders[cat] = [];
-    if (!catOrders[cat].includes(o)) catOrders[cat].push(o);
-  }));
-  return { catTotals, catRevenue, catProducts, catOrders };
-}
-
-function renderMilestones(orders, nameToCategory){
-  const { catTotals, catProducts, catOrders } = groupByCategory(orders, nameToCategory);
-  window.__catOrders = catOrders;
-  const ordersList = document.getElementById('ordersList');
-  const catNames = Object.keys(catTotals);
-  if (!catNames.length){ ordersList.innerHTML = '<div class="empty">No orders in this range.</div>'; return; }
-  ordersList.innerHTML = '';
-  catNames.sort((a,b) => catTotals[b]-catTotals[a]).forEach(cat => {
-    const row = document.createElement('div'); row.className = 'item category-row';
-    row.innerHTML = `<div class="item-body"><div class="item-title"><span class="cat-caret">▸</span>${esc(cat)}</div></div><div class="item-sub">${catTotals[cat]} sold</div>`;
-    const productsWrap = document.createElement('div');
-    productsWrap.style.display = 'none';
-    productsWrap.style.paddingLeft = '22px';
-    Object.keys(catProducts[cat]).sort((a,b)=>catProducts[cat][b]-catProducts[cat][a]).forEach(pName => {
-      const pRow = document.createElement('div'); pRow.className = 'item';
-      pRow.innerHTML = `<div class="item-body"><div class="item-title">${esc(pName)}</div></div><div class="item-sub">${catProducts[cat][pName]} sold</div>`;
-      productsWrap.appendChild(pRow);
-    });
-    row.onclick = () => {
-      const open = productsWrap.style.display !== 'none';
-      productsWrap.style.display = open ? 'none' : 'block';
-      row.querySelector('.cat-caret').classList.toggle('open', !open);
-    };
-    ordersList.appendChild(row);
-    ordersList.appendChild(productsWrap);
-  });
-}
-
-function renderSalesChart(orders, nameToCategory){
-  const { catTotals, catRevenue, catOrders } = groupByCategory(orders, nameToCategory);
-  window.__catOrders = catOrders;
-  const wrap = document.getElementById('salesChart');
-  wrap.innerHTML = '';
-  const names = Object.keys(catTotals);
-  if (!names.length){ wrap.innerHTML = '<div class="empty">No orders in this range.</div>'; return; }
-  const maxBarPx = 150;
-  const max = Math.max(...names.map(n => catTotals[n]));
-  let tooltip = document.getElementById('chartTooltip');
-  if (!tooltip){
-    tooltip = document.createElement('div');
-    tooltip.id = 'chartTooltip';
-    tooltip.style.cssText = 'display:none; position:fixed; background:var(--soil); color:var(--cream); padding:8px 12px; border-radius:10px; font-size:.8rem; pointer-events:none; z-index:200; white-space:nowrap;';
-    document.body.appendChild(tooltip);
-  }
-  names.sort((a,b) => catTotals[b]-catTotals[a]).forEach(name => {
-    const px = max ? Math.max((catTotals[name]/max)*maxBarPx, 6) : 6;
-    const barWrap = document.createElement('div');
-    barWrap.style.cssText = 'display:flex; flex-direction:column; align-items:center; justify-content:flex-end; gap:8px; flex:1; height:'+ (maxBarPx+50) +'px; cursor:pointer;';
-    barWrap.innerHTML = `
-      <div style="font-weight:700; font-size:.8rem;">${catTotals[name]}</div>
-      <div class="chart-bar" style="width:100%; max-width:52px; height:${px}px; background:var(--leaf); border-radius:10px 10px 0 0; transition:background .15s;"></div>
-      <div style="font-size:.75rem; text-align:center; color:var(--soil);">${esc(name)}</div>`;
-    const bar = barWrap.querySelector('.chart-bar');
-    barWrap.onmouseenter = (e) => {
-      bar.style.background = 'var(--leaf-dark)';
-      tooltip.innerHTML = `<strong>${esc(name)}</strong><br>${catTotals[name]} units sold<br>₹${catRevenue[name].toFixed(0)} revenue`;
-      tooltip.style.display = 'block';
-    };
-    barWrap.onmousemove = (e) => {
-      tooltip.style.left = (e.clientX + 14) + 'px';
-      tooltip.style.top = (e.clientY - 10) + 'px';
-    };
-    barWrap.onmouseleave = () => {
-      bar.style.background = 'var(--leaf)';
-      tooltip.style.display = 'none';
-    };
-    barWrap.onclick = () => openCsvView(name);
-    wrap.appendChild(barWrap);
-  });
-}
-
-function applyChartFilter(){
-  const fromVal = document.getElementById('chartFrom').value;
-  const toVal = document.getElementById('chartTo').value;
-  let filtered = lastOrders;
-  if (fromVal){
-    const from = new Date(fromVal);
-    filtered = filtered.filter(o => new Date(o.created_at) >= from);
-  }
-  if (toVal){
-    const to = new Date(toVal); to.setHours(23,59,59,999);
-    filtered = filtered.filter(o => new Date(o.created_at) <= to);
-  }
-  renderMilestones(filtered, window.__nameToCategory || {});
-  renderSalesChart(filtered, window.__nameToCategory || {});
-}
-document.getElementById('chartApplyBtn').onclick = applyChartFilter;
-document.getElementById('chartAllTimeBtn').onclick = () => {
-  document.getElementById('chartFrom').value = '';
-  document.getElementById('chartTo').value = '';
-  renderMilestones(lastOrders, window.__nameToCategory || {});
-  renderSalesChart(lastOrders, window.__nameToCategory || {});
-};
-
-function openCsvView(catName){
-  const orders = (window.__catOrders && window.__catOrders[catName]) || [];
-  document.getElementById('csvViewTitle').textContent = catName + ' — order details';
-  const table = document.getElementById('csvViewTable');
-  const headers = ['Order ID','Customer','Email','Items','Total','Date'];
-  let html = '<tr>' + headers.map(h=>`<th>${h}</th>`).join('') + '</tr>';
-  orders.forEach(o => {
-    const itemsText = (o.items||[]).map(i => `${i.name} x${i.quantity}`).join(', ');
-    html += `<tr><td>${o.id}</td><td>${esc(o.customer_name)}</td><td>${esc(o.customer_email)}</td><td>${esc(itemsText)}</td><td>₹${Number(o.total).toFixed(0)}</td><td>${new Date(o.created_at).toLocaleString()}</td></tr>`;
-  });
-  table.innerHTML = html;
-  openModal('csvViewModal');
-}
-
 // ---- CSV EXPORT ----
 function downloadCsv(filename, rows){
   const csv = rows.map(r => r.map(cell => {
@@ -540,25 +393,12 @@ function downloadCsv(filename, rows){
   URL.revokeObjectURL(url);
 }
 document.getElementById('downloadOrdersBtn').onclick = () => {
-  const dateVal = document.getElementById('ordersDateFilter').value;
-  if (!dateVal){ toast('Please select a date first'); return; }
-  const rows = [['Order ID','Customer','Email','Address','Pincode','Landmark','Delivery time','Items','Total','Status','Date']];
-  lastOrders
-    .filter(o => new Date(o.created_at).toDateString() === new Date(dateVal).toDateString())
-    .forEach(o => {
-      const itemsText = (o.items||[]).map(i => `${i.name} x${i.quantity}`).join('; ');
-      rows.push([o.id, o.customer_name, o.customer_email, o.address, o.pincode, o.landmark, o.preferred_time, itemsText, o.total, o.status, new Date(o.created_at).toLocaleString()]);
-    });
-  if (rows.length === 1){ toast('No orders on that date'); return; }
-  downloadCsv(`orders-${dateVal}.csv`, rows);
-};
-document.getElementById('fetchAllOrdersBtn').onclick = () => {
   const rows = [['Order ID','Customer','Email','Address','Pincode','Landmark','Delivery time','Items','Total','Status','Date']];
   lastOrders.forEach(o => {
     const itemsText = (o.items||[]).map(i => `${i.name} x${i.quantity}`).join('; ');
     rows.push([o.id, o.customer_name, o.customer_email, o.address, o.pincode, o.landmark, o.preferred_time, itemsText, o.total, o.status, new Date(o.created_at).toLocaleString()]);
   });
-  downloadCsv('orders-all.csv', rows);
+  downloadCsv('orders.csv', rows);
 };
 document.getElementById('downloadSalesBtn').onclick = () => {
   const bySales = window.__lastSalesByCategory || {};
@@ -566,6 +406,113 @@ document.getElementById('downloadSalesBtn').onclick = () => {
   Object.keys(bySales).forEach(name => rows.push([name, bySales[name].qty, bySales[name].revenue]));
   downloadCsv('sales-by-category.csv', rows);
 };
+
+// ---- ORDER MANAGEMENT ----
+const STATUS_LABELS = {
+  placed:'Placed', packed:'Packed', picked_up:'Picked Up', on_the_way:'On the Way',
+  delivered:'Delivered', cancelled:'Cancelled', return_requested:'Return Requested', returned:'Returned'
+};
+const STATUS_ORDER = ['placed','packed','picked_up','on_the_way','delivered'];
+let orderMgmtOrders = [];
+let activeOrderSubtab = 'all';
+
+async function loadOrderManagement(){
+  orderMgmtOrders = await api('/api/orders');
+  renderFunnel();
+  renderOrderList();
+}
+
+function renderFunnel(){
+  const counts = { placed:0, packed:0, picked_up:0, on_the_way:0, delivered:0, return:0 };
+  orderMgmtOrders.forEach(o => {
+    if (o.status === 'return_requested' || o.status === 'returned') counts.return++;
+    else if (counts[o.status] !== undefined) counts[o.status]++;
+  });
+  const max = Math.max(1, ...Object.values(counts));
+  const wrap = document.getElementById('orderFunnel');
+  const rowsDef = [
+    ['placed','Placed'], ['packed','Packed'], ['picked_up','Picked Up'],
+    ['on_the_way','On the Way'], ['delivered','Delivered'], ['return','Return'],
+  ];
+  wrap.innerHTML = rowsDef.map(([key,label]) => `
+    <div class="funnel-row">
+      <div class="funnel-label">${label}</div>
+      <div class="funnel-bar-track"><div class="funnel-bar-fill ${key==='return'?'is-return':''}" style="width:${(counts[key]/max*100).toFixed(0)}%;"></div></div>
+      <div class="funnel-count">${counts[key]}</div>
+    </div>`).join('');
+}
+
+document.getElementById('orderSubtabs').addEventListener('click', (e) => {
+  const btn = e.target.closest('.order-subtab');
+  if (!btn) return;
+  document.querySelectorAll('.order-subtab').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  activeOrderSubtab = btn.dataset.status;
+  renderOrderList();
+});
+
+function renderOrderList(){
+  const wrap = document.getElementById('orderMgmtList');
+  let filtered = orderMgmtOrders;
+  if (activeOrderSubtab === 'return') filtered = orderMgmtOrders.filter(o => o.status === 'return_requested' || o.status === 'returned');
+  else if (activeOrderSubtab !== 'all') filtered = orderMgmtOrders.filter(o => o.status === activeOrderSubtab);
+
+  if (!filtered.length){ wrap.innerHTML = '<div class="empty">No orders here yet.</div>'; return; }
+  wrap.innerHTML = '';
+  filtered.forEach(o => {
+    const itemsText = (o.items||[]).map(i => `${i.name} ×${i.quantity}`).join(', ');
+    const placedAt = new Date(o.created_at);
+    const deliveryAt = o.delivery_date ? new Date(o.delivery_date) : null;
+    const card = document.createElement('div');
+    card.className = 'order-card';
+    card.innerHTML = `
+      <div class="order-card-top">
+        <div class="order-card-id">#${o.id} — ${esc(o.customer_name)}</div>
+        <span class="order-status-pill st-${o.status}">${STATUS_LABELS[o.status]||o.status}</span>
+      </div>
+      <div class="order-card-meta">
+        🗓️ Placed: ${placedAt.toLocaleString()}<br>
+        🕒 Slot selected: ${esc(o.preferred_time||'Anytime')}<br>
+        📦 Communicated delivery: ${deliveryAt ? deliveryAt.toLocaleDateString() : '—'}<br>
+        🛒 ${esc(itemsText)} — ₹${Number(o.total).toFixed(0)}<br>
+        📍 ${esc([o.address,o.pincode,o.landmark].filter(Boolean).join(', '))}
+        ${o.status==='return_requested'||o.status==='returned' ? `<br>↩️ Return reason: ${esc(o.return_reason||'—')}` : ''}
+      </div>
+      <div class="order-card-actions"></div>`;
+    const actions = card.querySelector('.order-card-actions');
+
+    if (o.status === 'return_requested'){
+      const btn = document.createElement('button');
+      btn.className = 'btn btn-primary btn-sm'; btn.textContent = 'Mark returned';
+      btn.onclick = () => updateOrderStatus(o.id, 'returned');
+      actions.appendChild(btn);
+    } else if (o.status !== 'returned' && o.status !== 'cancelled') {
+      const idx = STATUS_ORDER.indexOf(o.status);
+      if (idx > -1 && idx < STATUS_ORDER.length - 1){
+        const next = STATUS_ORDER[idx+1];
+        const btn = document.createElement('button');
+        btn.className = 'btn btn-primary btn-sm'; btn.textContent = 'Move to ' + STATUS_LABELS[next];
+        btn.onclick = () => updateOrderStatus(o.id, next);
+        actions.appendChild(btn);
+      }
+      if (o.status === 'placed'){
+        const cancel = document.createElement('button');
+        cancel.className = 'btn btn-danger btn-sm'; cancel.textContent = 'Cancel order';
+        cancel.onclick = () => updateOrderStatus(o.id, 'cancelled');
+        actions.appendChild(cancel);
+      }
+    }
+    wrap.appendChild(card);
+  });
+}
+
+async function updateOrderStatus(id, status){
+  try{
+    await api('/api/orders/'+id+'/status', { method:'PATCH', body: JSON.stringify({ status }) });
+    toast('Order updated to ' + (STATUS_LABELS[status]||status));
+    await loadOrderManagement();
+  }catch(e){ toast('Could not update: '+e.message); }
+}
 
 // ---- MESSAGES ----
 let activeThreadCustomerId = null;
@@ -611,10 +558,6 @@ document.getElementById('replyForm').addEventListener('submit', async (e) => {
     toast('Reply sent');
   }catch(err){ toast('Could not send: '+err.message); }
 });
-document.getElementById('closeThreadBtn').onclick = () => {
-  document.getElementById('threadDetailCard').style.display = 'none';
-  activeThreadCustomerId = null;
-};
 async function loadContent(){
   contentDoc = await api('/api/content');
   document.getElementById('c_badge').value = contentDoc.badge || '';

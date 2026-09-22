@@ -80,6 +80,8 @@
   .cart-remove{ background:none; border:none; color:var(--chili); font-size:1.2rem; cursor:pointer; }
   .modal-overlay{ display:none; position:fixed; inset:0; background:rgba(91,58,36,0.45); z-index:100; align-items:center; justify-content:center; padding:20px; }
   .muted{ color:#8a7457; font-size:.9rem; }
+  .toast{ position:fixed; bottom:20px; left:50%; transform:translateX(-50%) translateY(20px); background:var(--soil); color:var(--cream); padding:12px 22px; border-radius:100px; font-weight:700; font-size:.88rem; opacity:0; pointer-events:none; transition:all .25s ease; z-index:200; }
+  .toast.show{ opacity:1; transform:translateX(-50%) translateY(0); }
   .category-grid{ display:grid; grid-template-columns:repeat(4, 1fr); gap:20px; margin-bottom:10px; }
   .category-tile{ background:var(--card); border-radius:22px; padding:22px 16px; text-align:center; cursor:pointer; box-shadow:0 8px 20px rgba(91,58,36,0.08); transition:transform .2s; }
   .category-tile:hover{ transform:translateY(-4px); }
@@ -268,6 +270,13 @@
 const API = '';
 
 function esc(s){ return String(s == null ? '' : s); }
+function toast(msg){
+  const t = document.getElementById('siteToast');
+  if (!t) return;
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'), 2400);
+}
 
 async function loadContent(){
   try{
@@ -588,14 +597,38 @@ async function openMyOrders(){
     const orders = await res.json();
     if (!res.ok) throw new Error(orders.error || 'Could not load orders');
     if (!orders.length){ wrap.innerHTML = '<p class="muted">No orders yet.</p>'; return; }
+    const STATUS_LABELS = { placed:'Placed', packed:'Packed', picked_up:'Picked Up', on_the_way:'On the Way', delivered:'Delivered', cancelled:'Cancelled', return_requested:'Return requested', returned:'Returned' };
     wrap.innerHTML = orders.map(o => {
       const items = (o.items||[]).map(i => `${esc(i.name)} ×${i.quantity}`).join(', ');
-      return `<div class="cart-row" style="grid-template-columns:1fr auto;">
-        <span><strong>#${o.id}</strong> — ${items}<br><span class="muted">${new Date(o.created_at).toLocaleDateString()} · ${esc(o.preferred_time||'Anytime')}</span></span>
-        <span class="cart-row-price">₹${Number(o.total).toFixed(0)}</span>
+      const delivery = o.delivery_date ? new Date(o.delivery_date).toLocaleDateString() : '—';
+      const canReturn = o.status === 'delivered';
+      return `<div style="border-bottom:1px solid var(--cream-2); padding:12px 0;">
+        <div style="display:flex; justify-content:space-between; gap:10px; flex-wrap:wrap;">
+          <strong>#${o.id}</strong>
+          <span style="font-size:.8rem; font-weight:700; color:var(--leaf-dark);">${STATUS_LABELS[o.status]||o.status}</span>
+        </div>
+        <div class="muted" style="margin:4px 0;">${items} — ₹${Number(o.total).toFixed(0)}</div>
+        <div class="muted">Ordered ${new Date(o.created_at).toLocaleDateString()} · Expected delivery: ${delivery}</div>
+        ${canReturn ? `<button type="button" class="btn btn-ghost btn-sm" style="margin-top:8px;" onclick="requestReturn(${o.id})">Request return</button>` : ''}
       </div>`;
     }).join('');
   }catch(err){ wrap.innerHTML = `<p class="muted">${esc(err.message)}</p>`; }
+}
+
+async function requestReturn(orderId){
+  const c = getCustomer();
+  if (!c) return;
+  const reason = prompt('Tell us briefly why you want to return this order (optional):') || '';
+  try{
+    const res = await fetch(API + '/api/orders/'+orderId+'/return', {
+      method:'POST', headers: {'Content-Type':'application/json','Authorization':'Bearer '+c.token},
+      body: JSON.stringify({ reason })
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Could not request return');
+    toast('Return requested');
+    openMyOrders();
+  }catch(err){ toast(err.message); }
 }
 
 async function checkUnreadMessages(){
@@ -652,5 +685,6 @@ document.getElementById('messageForm').addEventListener('submit', async (e) => {
   }catch(err){}
 });
 </script>
+<div class="toast" id="siteToast"></div>
 </body>
 </html>

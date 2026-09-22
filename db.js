@@ -87,10 +87,18 @@ async function initSchema() {
       preferred_time TEXT DEFAULT '',
       items JSONB NOT NULL,
       total NUMERIC NOT NULL DEFAULT 0,
-      status TEXT DEFAULT 'paid',
+      status TEXT DEFAULT 'placed',
+      delivery_date TIMESTAMPTZ,
+      status_updated_at TIMESTAMPTZ DEFAULT now(),
+      return_reason TEXT DEFAULT '',
       created_at TIMESTAMPTZ DEFAULT now()
     );
   `);
+  await pool.query(`ALTER TABLE orders ADD COLUMN IF NOT EXISTS delivery_date TIMESTAMPTZ;`);
+  await pool.query(`ALTER TABLE orders ADD COLUMN IF NOT EXISTS status_updated_at TIMESTAMPTZ DEFAULT now();`);
+  await pool.query(`ALTER TABLE orders ADD COLUMN IF NOT EXISTS return_reason TEXT DEFAULT '';`);
+  await pool.query(`UPDATE orders SET status = 'placed' WHERE status = 'paid';`);
+  await pool.query(`UPDATE orders SET delivery_date = created_at + interval '4 days' WHERE delivery_date IS NULL;`);
   await pool.query(`ALTER TABLE orders ADD COLUMN IF NOT EXISTS address TEXT DEFAULT '';`);
   await pool.query(`ALTER TABLE orders ADD COLUMN IF NOT EXISTS pincode TEXT DEFAULT '';`);
   await pool.query(`ALTER TABLE orders ADD COLUMN IF NOT EXISTS landmark TEXT DEFAULT '';`);

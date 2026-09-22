@@ -381,20 +381,12 @@ document.getElementById('fetchAllOrdersBtn').onclick = () => {
   });
   downloadCsv('orders-all.csv', rows);
 };
-  const rows = [['Order ID','Customer','Email','Address','Pincode','Landmark','Delivery time','Items','Total','Status','Date']];
-  lastOrders.forEach(o => {
-    const itemsText = (o.items||[]).map(i => `${i.name} x${i.quantity}`).join('; ');
-    rows.push([o.id, o.customer_name, o.customer_email, o.address, o.pincode, o.landmark, o.preferred_time, itemsText, o.total, o.status, new Date(o.created_at).toLocaleString()]);
-  });
-  downloadCsv('orders.csv', rows);
-};
 document.getElementById('downloadSalesBtn').onclick = () => {
   const bySales = window.__lastSalesByCategory || {};
   const rows = [['Category','Units sold','Revenue']];
   Object.keys(bySales).forEach(name => rows.push([name, bySales[name].qty, bySales[name].revenue]));
   downloadCsv('sales-by-category.csv', rows);
 };
-
 // ---- MESSAGES ----
 let activeThreadCustomerId = null;
 async function loadThreads(){

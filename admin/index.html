@@ -480,6 +480,10 @@ function renderOrderList(){
         📍 ${esc([o.address,o.pincode,o.landmark].filter(Boolean).join(', '))}
         ${o.status==='return_requested'||o.status==='returned' ? `<br>↩️ Return reason: ${esc(o.return_reason||'—')}` : ''}
       </div>
+      ${(o.status==='return_requested'||o.status==='returned') && o.return_photos && o.return_photos.length ? `
+      <div style="display:flex; gap:6px; flex-wrap:wrap; margin-top:8px;">
+        ${o.return_photos.map(p => `<img src="${p}" alt="Return photo" style="width:64px; height:64px; object-fit:cover; border-radius:10px; border:2px solid var(--cream-2); cursor:pointer;" onclick="window.open(this.src,'_blank')">`).join('')}
+      </div>` : ''}
       <div class="order-card-actions"></div>`;
     const actions = card.querySelector('.order-card-actions');
 

@@ -102,6 +102,12 @@
   }
   .modal-box{ background:var(--card); border-radius:24px; padding:32px; max-width:420px; width:100%; position:relative; }
   .modal-close{ position:absolute; top:14px; right:16px; background:none; border:none; font-size:1.5rem; color:var(--soil); cursor:pointer; }
+  .photo-picker-grid{ display:grid; grid-template-columns:repeat(3, 1fr); gap:8px; margin:14px 0 6px; }
+  .photo-thumb{ position:relative; aspect-ratio:1; border-radius:12px; overflow:hidden; background:var(--cream-2); }
+  .photo-thumb img{ width:100%; height:100%; object-fit:cover; display:block; }
+  .photo-thumb .rm{ position:absolute; top:4px; right:4px; background:rgba(91,58,36,0.75); color:#fff; border:none; border-radius:50%; width:22px; height:22px; font-size:.85rem; line-height:1; cursor:pointer; }
+  .photo-add-tile{ aspect-ratio:1; border-radius:12px; border:2px dashed var(--leaf); background:var(--cream); color:var(--leaf-dark); font-weight:700; font-size:1.6rem; cursor:pointer; display:flex; align-items:center; justify-content:center; }
+  .photo-add-tile:disabled{ opacity:.4; cursor:not-allowed; }
   footer{ background:var(--soil); color:#c9bda6; text-align:center; padding:26px 0; font-size:.9rem; }
   footer .mark-mini{color:var(--turmeric); font-weight:700;}
   @media (max-width: 880px){ .hero-grid, .about-grid, .contact-grid{grid-template-columns:1fr;} .services-grid{grid-template-columns:1fr;} .navlinks{display:none;} }
@@ -258,6 +264,19 @@
     <button type="button" class="modal-close" onclick="closeModal('myOrdersModal')">×</button>
     <h3>My orders</h3>
     <div id="myOrdersList"><p class="muted">Loading…</p></div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="returnModal">
+  <div class="modal-box">
+    <button type="button" class="modal-close" onclick="closeModal('returnModal')">×</button>
+    <h3>Request return</h3>
+    <p class="muted" style="margin-top:-6px;">Tell us briefly why, and/or add a few photos — at least one is needed to submit.</p>
+    <textarea id="returnReason" placeholder="Why are you returning this order?" style="width:100%; min-height:80px; padding:11px 14px; border-radius:14px; border:2px solid var(--cream-2); background:var(--cream); font-family:'Karla'; font-size:.95rem; color:var(--soil); resize:vertical;"></textarea>
+    <div class="photo-picker-grid" id="returnPhotoGrid"></div>
+    <input type="file" id="returnPhotoInput" accept="image/*" multiple style="display:none;">
+    <p class="muted" id="returnPhotoHint" style="font-size:.78rem; margin:4px 0 10px;">0 / 6 photos added</p>
+    <button type="button" class="btn btn-primary" id="returnSubmitBtn" style="width:100%; text-align:center;" onclick="submitReturn()" disabled>Submit return request</button>
   </div>
 </div>
 
@@ -630,27 +649,117 @@ async function openMyOrders(){
         </div>
         <div class="muted" style="margin:4px 0;">${items} — ₹${Number(o.total).toFixed(0)}</div>
         <div class="muted">Ordered ${new Date(o.created_at).toLocaleDateString()} · Expected delivery: ${delivery}</div>
-        ${canReturn ? `<button type="button" class="btn btn-ghost btn-sm" style="margin-top:8px;" onclick="requestReturn(${o.id})">Request return</button>` : ''}
+        ${canReturn ? `<button type="button" class="btn btn-ghost btn-sm" style="margin-top:8px;" onclick="openReturnModal(${o.id})">Request return</button>` : ''}
         ${returnWindowClosed ? `<div class="muted" style="margin-top:6px; font-size:.8rem;">Return window (24 hours from delivery) has closed.</div>` : ''}
       </div>`;
     }).join('');
   }catch(err){ wrap.innerHTML = `<p class="muted">${esc(err.message)}</p>`; }
 }
 
-async function requestReturn(orderId){
+// ---- Return request modal (reason + up to 6 photos) ----
+const MAX_RETURN_PHOTOS = 6;
+let returnPhotos = [];   // array of compressed base64 data URLs
+let returnOrderId = null;
+
+function openReturnModal(orderId){
+  returnOrderId = orderId;
+  returnPhotos = [];
+  document.getElementById('returnReason').value = '';
+  renderReturnPhotoGrid();
+  openModal('returnModal');
+}
+
+document.getElementById('returnReason').addEventListener('input', updateReturnSubmitState);
+
+document.getElementById('returnPhotoInput').addEventListener('change', async (e) => {
+  const room = MAX_RETURN_PHOTOS - returnPhotos.length;
+  const files = Array.from(e.target.files || []).slice(0, room);
+  for (const file of files) {
+    try { returnPhotos.push(await resizeImageToDataUrl(file)); }
+    catch(err){ console.error('Could not read photo', err); }
+  }
+  e.target.value = ''; // allow picking the same file again later
+  renderReturnPhotoGrid();
+});
+
+// Downscale + compress client-side so 6 phone photos don't blow up the request
+function resizeImageToDataUrl(file, maxDim = 1000, quality = 0.72){
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onerror = () => reject(new Error('Could not read file'));
+    reader.onload = () => {
+      const img = new Image();
+      img.onerror = () => reject(new Error('Could not load image'));
+      img.onload = () => {
+        let { width, height } = img;
+        if (width > maxDim || height > maxDim){
+          const scale = maxDim / Math.max(width, height);
+          width = Math.round(width * scale);
+          height = Math.round(height * scale);
+        }
+        const canvas = document.createElement('canvas');
+        canvas.width = width; canvas.height = height;
+        canvas.getContext('2d').drawImage(img, 0, 0, width, height);
+        resolve(canvas.toDataURL('image/jpeg', quality));
+      };
+      img.src = reader.result;
+    };
+    reader.readAsDataURL(file);
+  });
+}
+
+function renderReturnPhotoGrid(){
+  const grid = document.getElementById('returnPhotoGrid');
+  grid.innerHTML = '';
+  returnPhotos.forEach((src, i) => {
+    const tile = document.createElement('div');
+    tile.className = 'photo-thumb';
+    tile.innerHTML = `<img src="${src}" alt=""><button type="button" class="rm" onclick="removeReturnPhoto(${i})">×</button>`;
+    grid.appendChild(tile);
+  });
+  if (returnPhotos.length < MAX_RETURN_PHOTOS){
+    const addBtn = document.createElement('button');
+    addBtn.type = 'button';
+    addBtn.className = 'photo-add-tile';
+    addBtn.textContent = '+';
+    addBtn.onclick = () => document.getElementById('returnPhotoInput').click();
+    grid.appendChild(addBtn);
+  }
+  document.getElementById('returnPhotoHint').textContent = `${returnPhotos.length} / ${MAX_RETURN_PHOTOS} photos added`;
+  updateReturnSubmitState();
+}
+
+function removeReturnPhoto(i){
+  returnPhotos.splice(i, 1);
+  renderReturnPhotoGrid();
+}
+
+function updateReturnSubmitState(){
+  const hasText = document.getElementById('returnReason').value.trim().length > 0;
+  const hasPhoto = returnPhotos.length > 0;
+  document.getElementById('returnSubmitBtn').disabled = !(hasText || hasPhoto);
+}
+
+async function submitReturn(){
   const c = getCustomer();
-  if (!c) return;
-  const reason = prompt('Tell us briefly why you want to return this order (optional):') || '';
+  if (!c || !returnOrderId) return;
+  const reason = document.getElementById('returnReason').value.trim();
+  if (!reason && !returnPhotos.length) return; // guard — button should already be disabled
+
+  const btn = document.getElementById('returnSubmitBtn');
+  const originalLabel = btn.textContent;
+  btn.disabled = true; btn.textContent = 'Submitting…';
   try{
-    const res = await fetch(API + '/api/orders/'+orderId+'/return', {
+    const res = await fetch(API + '/api/orders/'+returnOrderId+'/return', {
       method:'POST', headers: {'Content-Type':'application/json','Authorization':'Bearer '+c.token},
-      body: JSON.stringify({ reason })
+      body: JSON.stringify({ reason, photos: returnPhotos })
     });
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || 'Could not request return');
+    closeModal('returnModal');
     toast('Return requested');
     openMyOrders();
-  }catch(err){ toast(err.message); }
+  }catch(err){ toast(err.message); btn.textContent = originalLabel; updateReturnSubmitState(); }
 }
 
 async function checkUnreadNotifications(){

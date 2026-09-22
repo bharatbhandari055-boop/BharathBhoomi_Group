@@ -46,6 +46,7 @@ const STATUS_MESSAGES = {
 };
 
 const RETURN_WINDOW_MS = 24 * 60 * 60 * 1000; // 24 hours
+const MAX_RETURN_PHOTOS = 6;
 
 async function notifyCustomer(order, status) {
   if (!order.customer_account_id) return; // guest checkout — nowhere to deliver the notification
@@ -80,7 +81,16 @@ router.patch('/:id/status', requireAuth, async (req, res) => {
 
 // Customer: request a return on their own delivered order
 router.post('/:id/return', requireCustomerAuth, async (req, res) => {
-  const { reason } = req.body || {};
+  const { reason, photos } = req.body || {};
+  const cleanReason = String(reason || '').trim().slice(0, 2000);
+  const cleanPhotos = Array.isArray(photos)
+    ? photos.filter(p => typeof p === 'string' && p.startsWith('data:image/')).slice(0, MAX_RETURN_PHOTOS)
+    : [];
+
+  if (!cleanReason && !cleanPhotos.length) {
+    return res.status(400).json({ error: 'Please add a reason or at least one photo before submitting.' });
+  }
+
   const { rows } = await pool.query('SELECT * FROM orders WHERE id = $1', [req.params.id]);
   const order = rows[0];
   if (!order) return res.status(404).json({ error: 'Order not found' });
@@ -93,8 +103,8 @@ router.post('/:id/return', requireCustomerAuth, async (req, res) => {
   }
 
   const { rows: updated } = await pool.query(
-    `UPDATE orders SET status = 'return_requested', status_updated_at = now(), return_reason = $1 WHERE id = $2 RETURNING *`,
-    [reason || '', req.params.id]
+    `UPDATE orders SET status = 'return_requested', status_updated_at = now(), return_reason = $1, return_photos = $2 WHERE id = $3 RETURNING *`,
+    [cleanReason, JSON.stringify(cleanPhotos), req.params.id]
   );
   res.json(updated[0]);
 });

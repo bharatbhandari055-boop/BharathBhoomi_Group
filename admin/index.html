@@ -207,8 +207,13 @@
       <div id="salesList" style="margin-top:10px;"><div class="empty">No orders yet.</div></div>
     </div>
     <div class="card">
-      <h2>Recent orders</h2>
-      <button class="btn btn-ghost btn-sm" id="downloadOrdersBtn" type="button">Download CSV</button>
+          <div class="card">
+      <h2>Order Milestones</h2>
+      <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap; margin-bottom:10px;">
+        <input type="date" id="ordersDateFilter">
+        <button class="btn btn-ghost btn-sm" id="downloadOrdersBtn" type="button">Download CSV (selected date)</button>
+        <button class="btn btn-ghost btn-sm" id="fetchAllOrdersBtn" type="button">Fetch All</button>
+      </div>
       <div id="ordersList" style="margin-top:10px;"><div class="empty">No orders yet.</div></div>
     </div>
   </section>
@@ -296,19 +301,21 @@ async function loadReports(){
 
     const orders = await api('/api/orders');
     lastOrders = orders;
-    const ordersList = document.getElementById('ordersList');
-    if (!orders.length){ ordersList.innerHTML = '<div class="empty">No orders yet.</div>'; }
+        const ordersList = document.getElementById('ordersList');
+    const productCounts = {};
+    orders.forEach(o => (o.items||[]).forEach(i => {
+      productCounts[i.name] = (productCounts[i.name]||0) + (Number(i.quantity)||0);
+    }));
+    const productNames = Object.keys(productCounts);
+    if (!productNames.length){ ordersList.innerHTML = '<div class="empty">No orders yet.</div>'; }
     else {
       ordersList.innerHTML = '';
-      orders.slice(0,15).forEach(o => {
+      productNames.sort((a,b) => productCounts[b]-productCounts[a]).forEach(name => {
         const row = document.createElement('div'); row.className = 'item';
-        const itemsText = (o.items||[]).map(i => `${i.name} ×${i.quantity}`).join(', ');
-        const deliveryText = [o.address, o.pincode, o.landmark].filter(Boolean).join(', ');
-        row.innerHTML = `<div class="item-body"><div class="item-title">#${o.id} ${esc(o.customer_name)} — ₹${Number(o.total).toFixed(0)}</div><div class="item-sub">${esc(itemsText)} · ${new Date(o.created_at).toLocaleString()}</div><div class="item-sub">📍 ${esc(deliveryText)} · 🕒 ${esc(o.preferred_time||'Anytime')} · ✉️ ${esc(o.customer_email)}</div></div>`;
+        row.innerHTML = `<div class="item-body"><div class="item-title">${esc(name)}</div></div><div class="item-sub">${productCounts[name]} sold</div>`;
         ordersList.appendChild(row);
       });
     }
-
     // Sales by category: map product name -> category name via current product list
     const nameToCategory = {};
     try{
@@ -354,6 +361,26 @@ function downloadCsv(filename, rows){
   URL.revokeObjectURL(url);
 }
 document.getElementById('downloadOrdersBtn').onclick = () => {
+  const dateVal = document.getElementById('ordersDateFilter').value;
+  if (!dateVal){ toast('Please select a date first'); return; }
+  const rows = [['Order ID','Customer','Email','Address','Pincode','Landmark','Delivery time','Items','Total','Status','Date']];
+  lastOrders
+    .filter(o => new Date(o.created_at).toDateString() === new Date(dateVal).toDateString())
+    .forEach(o => {
+      const itemsText = (o.items||[]).map(i => `${i.name} x${i.quantity}`).join('; ');
+      rows.push([o.id, o.customer_name, o.customer_email, o.address, o.pincode, o.landmark, o.preferred_time, itemsText, o.total, o.status, new Date(o.created_at).toLocaleString()]);
+    });
+  if (rows.length === 1){ toast('No orders on that date'); return; }
+  downloadCsv(`orders-${dateVal}.csv`, rows);
+};
+document.getElementById('fetchAllOrdersBtn').onclick = () => {
+  const rows = [['Order ID','Customer','Email','Address','Pincode','Landmark','Delivery time','Items','Total','Status','Date']];
+  lastOrders.forEach(o => {
+    const itemsText = (o.items||[]).map(i => `${i.name} x${i.quantity}`).join('; ');
+    rows.push([o.id, o.customer_name, o.customer_email, o.address, o.pincode, o.landmark, o.preferred_time, itemsText, o.total, o.status, new Date(o.created_at).toLocaleString()]);
+  });
+  downloadCsv('orders-all.csv', rows);
+};
   const rows = [['Order ID','Customer','Email','Address','Pincode','Landmark','Delivery time','Items','Total','Status','Date']];
   lastOrders.forEach(o => {
     const itemsText = (o.items||[]).map(i => `${i.name} x${i.quantity}`).join('; ');

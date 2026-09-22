@@ -38,6 +38,7 @@ async function initSchema() {
   `);
   await pool.query(`ALTER TABLE products ADD COLUMN IF NOT EXISTS price NUMERIC DEFAULT 0;`);
   await pool.query(`ALTER TABLE products ADD COLUMN IF NOT EXISTS category_id INT REFERENCES categories(id);`);
+  await pool.query(`ALTER TABLE products ADD COLUMN IF NOT EXISTS image TEXT DEFAULT NULL;`);
   await pool.query(`
     CREATE TABLE IF NOT EXISTS customers (
       id SERIAL PRIMARY KEY,

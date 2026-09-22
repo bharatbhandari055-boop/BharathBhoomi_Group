@@ -191,6 +191,12 @@
         <div class="field"><label>Category</label><select id="p_category"><option value="">Select a category…</option></select></div>
       </div>
       <div class="field"><label>Description</label><textarea id="p_desc" rows="2"></textarea></div>
+      <div class="field">
+        <label>Photo</label>
+        <img id="prodImagePreview" class="photo-preview" style="max-width:180px; aspect-ratio:1/1; display:none;">
+        <input type="file" id="prodImageInput" accept="image/*" style="display:none;">
+        <button class="btn btn-ghost btn-sm" id="prodImageBtn" type="button">Upload photo</button>
+      </div>
       <button class="btn btn-primary btn-sm" id="addProductBtn">Add product</button>
       <button class="btn btn-ghost btn-sm" id="cancelProductEditBtn" type="button" style="display:none;">Cancel edit</button>
       <span class="save-note" id="productAddNote"></span>
@@ -629,6 +635,10 @@ const STATUS_LABELS = {
 };
 const STATUS_ORDER = ['placed','packed','picked_up','on_the_way','delivered'];
 const NOT_CANCELLABLE = ['delivered','return_requested','returned','cancelled'];
+const STATUS_BUTTONS = [
+  ['packed','Packed'], ['picked_up','Picked Up'], ['on_the_way','On the Way'],
+  ['delivered','Delivered'], ['cancelled','Cancelled'], ['returned','Return'],
+];
 let orderMgmtOrders = [];
 let activeOrderSubtab = 'all';
 
@@ -697,7 +707,21 @@ function renderOrderList(){
       <div class="order-card-actions"></div>`;
     const actions = card.querySelector('.order-card-actions');
 
-    if (o.status === 'return_requested'){
+    if (activeOrderSubtab === 'all'){
+      STATUS_BUTTONS.forEach(([status, label]) => {
+        const btn = document.createElement('button');
+        btn.className = 'btn btn-sm ' + (status === 'cancelled' ? 'btn-danger' : (o.status === status ? 'btn-primary' : 'btn-ghost'));
+        btn.textContent = label;
+        btn.onclick = () => {
+          if (status === 'cancelled'){
+            if (confirm(`Cancel order #${o.id}? This can't be undone.`)) updateOrderStatus(o.id, status);
+          } else {
+            updateOrderStatus(o.id, status);
+          }
+        };
+        actions.appendChild(btn);
+      });
+    } else if (o.status === 'return_requested'){
       const btn = document.createElement('button');
       btn.className = 'btn btn-primary btn-sm'; btn.textContent = 'Mark returned';
       btn.onclick = () => updateOrderStatus(o.id, 'returned');
@@ -926,6 +950,7 @@ document.getElementById('saveCategoryBtn').onclick = async () => {
 
 // ---- PRODUCTS ----
 let editingProductId = null;
+let productImageData = null;
 
 async function loadProducts(){
   const products = await api('/api/products');
@@ -935,7 +960,8 @@ async function loadProducts(){
   products.forEach(p => {
     const catName = (allCategoriesAdmin.find(c => c.id === p.category_id) || {}).name || 'Uncategorized';
     const row = document.createElement('div'); row.className = 'item';
-    row.innerHTML = `<div class="item-body"><div class="item-title">${esc(p.icon)} ${esc(p.name)} <span style="color:var(--chili);">₹${Number(p.price||0).toFixed(0)}</span></div><div class="item-sub">${esc(catName)} · ${esc(p.description)}</div></div>`;
+    row.innerHTML = `${p.image ? `<img class="thumb" src="${p.image}" alt="">` : `<div class="thumb" style="display:flex;align-items:center;justify-content:center;">${esc(p.icon)}</div>`}
+      <div class="item-body"><div class="item-title">${esc(p.icon)} ${esc(p.name)} <span style="color:var(--chili);">₹${Number(p.price||0).toFixed(0)}</span></div><div class="item-sub">${esc(catName)} · ${esc(p.description)}</div></div>`;
     const actions = document.createElement('div'); actions.className = 'item-actions';
     const edit = document.createElement('button'); edit.className='btn btn-ghost btn-sm'; edit.textContent='Edit';
     edit.onclick = () => startEditProduct(p);
@@ -954,19 +980,31 @@ function startEditProduct(p){
   document.getElementById('p_price').value = p.price;
   document.getElementById('p_desc').value = p.description;
   document.getElementById('p_category').value = p.category_id || '';
+  productImageData = p.image || null;
+  const prodPreview = document.getElementById('prodImagePreview');
+  if (p.image){ prodPreview.src = p.image; prodPreview.style.display = 'block'; } else { prodPreview.style.display = 'none'; }
   document.getElementById('addProductBtn').textContent = 'Save changes';
   document.getElementById('cancelProductEditBtn').style.display = 'inline-flex';
 }
 function resetProductForm(){
   editingProductId = null;
+  productImageData = null;
   document.getElementById('prodFormTitle').textContent = 'Add a product';
   document.getElementById('p_name').value=''; document.getElementById('p_icon').value='';
   document.getElementById('p_desc').value=''; document.getElementById('p_price').value='';
   document.getElementById('p_category').value='';
+  document.getElementById('prodImagePreview').style.display = 'none';
   document.getElementById('addProductBtn').textContent = 'Add product';
   document.getElementById('cancelProductEditBtn').style.display = 'none';
 }
 document.getElementById('cancelProductEditBtn').onclick = resetProductForm;
+document.getElementById('prodImageBtn').onclick = () => document.getElementById('prodImageInput').click();
+document.getElementById('prodImageInput').onchange = async (e) => {
+  const file = e.target.files[0]; if (!file) return;
+  productImageData = await new Promise((resolve,reject)=>{ const r=new FileReader(); r.onload=()=>resolve(r.result); r.onerror=reject; r.readAsDataURL(file); });
+  const preview = document.getElementById('prodImagePreview');
+  preview.src = productImageData; preview.style.display = 'block';
+};
 document.getElementById('addProductBtn').onclick = async () => {
   const name = document.getElementById('p_name').value.trim();
   const icon = document.getElementById('p_icon').value.trim() || '🌿';
@@ -977,10 +1015,10 @@ document.getElementById('addProductBtn').onclick = async () => {
   if (!category_id){ toast('Please select a category'); return; }
   try{
     if (editingProductId){
-      await api('/api/products/'+editingProductId, { method:'PUT', body: JSON.stringify({name, icon, description, price, category_id}) });
+      await api('/api/products/'+editingProductId, { method:'PUT', body: JSON.stringify({name, icon, description, price, category_id, image: productImageData}) });
       toast('Product updated');
     } else {
-      await api('/api/products', { method:'POST', body: JSON.stringify({name, icon, description, price, category_id}) });
+      await api('/api/products', { method:'POST', body: JSON.stringify({name, icon, description, price, category_id, image: productImageData}) });
       toast('Product added');
     }
     resetProductForm();

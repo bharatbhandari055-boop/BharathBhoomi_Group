@@ -281,10 +281,11 @@
       <textarea id="returnReasonInput" rows="3" placeholder="Tell us briefly why you want to return this order"></textarea>
     </div>
     <div class="field">
-      <label>Photos (optional)</label>
+      <label>Photos (required)</label>
       <input type="file" id="returnPhotoInput" accept="image/*" capture="environment" multiple style="display:none;">
       <button type="button" class="btn btn-ghost btn-sm" id="returnPhotoBtn">📷 Add photo</button>
       <div id="returnPhotoPreview" style="display:flex; gap:8px; flex-wrap:wrap; margin-top:10px;"></div>
+      <p class="muted" style="font-size:.8rem; margin-top:6px;">Please add at least one photo of the item so we can verify the return.</p>
     </div>
     <button type="button" class="btn btn-primary" style="width:100%; margin-top:6px;" id="returnSubmitBtn">Submit return request</button>
     <p class="muted" id="returnRequestNote" style="margin-top:8px;"></p>
@@ -717,6 +718,10 @@ document.getElementById('returnSubmitBtn').onclick = async () => {
   const c = getCustomer();
   if (!c || !returnOrderId) return;
   const reason = document.getElementById('returnReasonInput').value.trim();
+  if (!returnPhotoData.length){
+    document.getElementById('returnRequestNote').textContent = 'Please add at least one photo before submitting.';
+    return;
+  }
   try{
     const res = await fetch(API + '/api/orders/'+returnOrderId+'/return', {
       method:'POST', headers: {'Content-Type':'application/json','Authorization':'Bearer '+c.token},

@@ -86,8 +86,11 @@
   .category-grid{ display:grid; grid-template-columns:repeat(4, 1fr); gap:20px; margin-bottom:10px; }
   .category-tile{ background:var(--card); border-radius:22px; padding:22px 16px; text-align:center; cursor:pointer; box-shadow:0 8px 20px rgba(91,58,36,0.08); transition:transform .2s; }
   .category-tile:hover{ transform:translateY(-4px); }
-  .category-tile-img{ width:64px; height:64px; border-radius:50%; margin:0 auto 12px; overflow:hidden; display:flex; align-items:center; justify-content:center; font-size:2rem; background:var(--cream-2); }
+  .category-tile-img{ width:100px; height:100px; border-radius:50%; margin:0 auto 12px; overflow:hidden; display:flex; align-items:center; justify-content:center; font-size:2.6rem; background:var(--cream-2); }
   .category-tile-img img{ width:100%; height:100%; object-fit:cover; }
+  .return-photo-thumb{ position:relative; width:64px; height:64px; border-radius:12px; overflow:hidden; background:var(--cream-2); }
+  .return-photo-thumb img{ width:100%; height:100%; object-fit:cover; }
+  .return-photo-thumb .remove-photo{ position:absolute; top:2px; right:2px; width:20px; height:20px; border-radius:50%; background:rgba(0,0,0,0.6); color:#fff; border:none; font-size:.75rem; line-height:1; cursor:pointer; }
   .category-tile-name{ font-family:'Fredoka'; font-weight:700; color:var(--leaf-dark); }
   .category-tile-count{ font-size:.8rem; color:#8a7457; margin-top:4px; }
   .msg-thread{ max-height:320px; overflow-y:auto; display:flex; flex-direction:column; gap:10px; }
@@ -105,6 +108,10 @@
   }
   .modal-box{ background:var(--card); border-radius:24px; padding:32px; max-width:420px; width:100%; position:relative; }
   .modal-close{ position:absolute; top:14px; right:16px; background:none; border:none; font-size:1.5rem; color:var(--soil); cursor:pointer; }
+  .zoomable{ cursor:zoom-in; }
+  #lightboxModal .modal-box{ max-width:min(90vw, 700px); padding:16px; background:transparent; box-shadow:none; text-align:center; }
+  #lightboxModal img{ max-width:100%; max-height:82vh; border-radius:16px; box-shadow:0 20px 50px rgba(0,0,0,0.4); margin:0 auto; }
+  #lightboxModal .modal-close{ background:var(--soil); color:var(--cream); border-radius:50%; width:34px; height:34px; top:-6px; right:-6px; }
   footer{ background:var(--soil); color:#c9bda6; text-align:center; padding:26px 0; font-size:.9rem; }
   footer .mark-mini{color:var(--turmeric); font-weight:700;}
   @media (max-width: 880px){ .hero-grid, .about-grid, .contact-grid{grid-template-columns:1fr;} .services-grid{grid-template-columns:1fr;} .navlinks{display:none;} }
@@ -264,6 +271,26 @@
   </div>
 </div>
 
+<div class="modal-overlay" id="returnRequestModal">
+  <div class="modal-box">
+    <button type="button" class="modal-close" onclick="closeModal('returnRequestModal')">×</button>
+    <h3>Request a return</h3>
+    <p class="muted" id="returnOrderLabel" style="margin-top:-6px;"></p>
+    <div class="field">
+      <label>Reason (optional)</label>
+      <textarea id="returnReasonInput" rows="3" placeholder="Tell us briefly why you want to return this order"></textarea>
+    </div>
+    <div class="field">
+      <label>Photos (optional)</label>
+      <input type="file" id="returnPhotoInput" accept="image/*" capture="environment" multiple style="display:none;">
+      <button type="button" class="btn btn-ghost btn-sm" id="returnPhotoBtn">📷 Add photo</button>
+      <div id="returnPhotoPreview" style="display:flex; gap:8px; flex-wrap:wrap; margin-top:10px;"></div>
+    </div>
+    <button type="button" class="btn btn-primary" style="width:100%; margin-top:6px;" id="returnSubmitBtn">Submit return request</button>
+    <p class="muted" id="returnRequestNote" style="margin-top:8px;"></p>
+  </div>
+</div>
+
 <div class="modal-overlay" id="confirmModal">
   <div class="modal-box" style="text-align:center;">
     <button type="button" class="modal-close" onclick="closeConfirm()">×</button>
@@ -281,6 +308,11 @@
 const API = '';
 
 function esc(s){ return String(s == null ? '' : s); }
+function openLightbox(src){
+  if (!src) return;
+  document.getElementById('lightboxImg').src = src;
+  openModal('lightboxModal');
+}
 function toast(msg){
   const t = document.getElementById('siteToast');
   if (!t) return;
@@ -337,10 +369,12 @@ function renderCategories(){
     const tile = document.createElement('div');
     tile.className = 'category-tile';
     tile.innerHTML = `
-      <div class="category-tile-img">${c.image ? `<img src="${c.image}" alt="">` : '🌿'}</div>
+      <div class="category-tile-img">${c.image ? `<img class="zoomable" src="${c.image}" alt="">` : '🌿'}</div>
       <div class="category-tile-name">${esc(c.name)}</div>
       <div class="category-tile-count">${count} item${count===1?'':'s'}</div>`;
     tile.onclick = () => showCategory(c);
+    const catImg = tile.querySelector('.category-tile-img img');
+    if (catImg) catImg.onclick = (e) => { e.stopPropagation(); openLightbox(c.image); };
     wrap.appendChild(tile);
   });
 }
@@ -367,11 +401,13 @@ function renderProductCards(products){
   products.forEach(p => {
     const card = document.createElement('div');
     card.className = 'service-card';
-    card.innerHTML = `<div class="service-icon">${p.image ? `<img src="${p.image}" alt="">` : esc(p.icon)}</div><h3></h3><p></p><div class="price"></div><button type="button" class="btn btn-primary btn-buy">Add to cart</button>`;
+    card.innerHTML = `<div class="service-icon">${p.image ? `<img class="zoomable" src="${p.image}" alt="">` : esc(p.icon)}</div><h3></h3><p></p><div class="price"></div><button type="button" class="btn btn-primary btn-buy">Add to cart</button>`;
     card.querySelector('h3').textContent = p.name;
     card.querySelector('p').textContent = p.description;
     card.querySelector('.price').textContent = '₹' + Number(p.price || 0).toFixed(0);
     card.querySelector('.btn-buy').onclick = () => addToCart(p);
+    const prodImg = card.querySelector('.service-icon img');
+    if (prodImg) prodImg.onclick = () => openLightbox(p.image);
     wrap.appendChild(card);
   });
 }
@@ -640,21 +676,59 @@ async function openMyOrders(){
   }catch(err){ wrap.innerHTML = `<p class="muted">${esc(err.message)}</p>`; }
 }
 
-async function requestReturn(orderId){
+let returnOrderId = null;
+let returnPhotoData = [];
+
+function requestReturn(orderId){
+  returnOrderId = orderId;
+  returnPhotoData = [];
+  document.getElementById('returnOrderLabel').textContent = 'Order #' + orderId;
+  document.getElementById('returnReasonInput').value = '';
+  document.getElementById('returnPhotoPreview').innerHTML = '';
+  document.getElementById('returnRequestNote').textContent = '';
+  openModal('returnRequestModal');
+}
+
+document.getElementById('returnPhotoBtn').onclick = () => document.getElementById('returnPhotoInput').click();
+
+document.getElementById('returnPhotoInput').onchange = async (e) => {
+  const files = Array.from(e.target.files || []);
+  for (const file of files){
+    const dataUrl = await new Promise((resolve,reject)=>{ const r=new FileReader(); r.onload=()=>resolve(r.result); r.onerror=reject; r.readAsDataURL(file); });
+    returnPhotoData.push(dataUrl);
+  }
+  e.target.value = '';
+  renderReturnPhotoPreview();
+};
+
+function renderReturnPhotoPreview(){
+  const wrap = document.getElementById('returnPhotoPreview');
+  wrap.innerHTML = '';
+  returnPhotoData.forEach((src, idx) => {
+    const thumb = document.createElement('div');
+    thumb.className = 'return-photo-thumb';
+    thumb.innerHTML = `<img src="${src}" alt=""><button type="button" class="remove-photo">×</button>`;
+    thumb.querySelector('.remove-photo').onclick = () => { returnPhotoData.splice(idx,1); renderReturnPhotoPreview(); };
+    wrap.appendChild(thumb);
+  });
+}
+
+document.getElementById('returnSubmitBtn').onclick = async () => {
   const c = getCustomer();
-  if (!c) return;
-  const reason = prompt('Tell us briefly why you want to return this order (optional):') || '';
+  if (!c || !returnOrderId) return;
+  const reason = document.getElementById('returnReasonInput').value.trim();
   try{
-    const res = await fetch(API + '/api/orders/'+orderId+'/return', {
+    const res = await fetch(API + '/api/orders/'+returnOrderId+'/return', {
       method:'POST', headers: {'Content-Type':'application/json','Authorization':'Bearer '+c.token},
-      body: JSON.stringify({ reason })
+      body: JSON.stringify({ reason, photos: returnPhotoData })
     });
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || 'Could not request return');
+    closeModal('returnRequestModal');
     toast('Return requested');
     openMyOrders();
-  }catch(err){ toast(err.message); }
-}
+  }catch(err){ document.getElementById('returnRequestNote').textContent = err.message; }
+};
 
 async function checkUnreadNotifications(){
   const c = getCustomer();
@@ -748,6 +822,13 @@ document.getElementById('messageForm').addEventListener('submit', async (e) => {
   }catch(err){}
 });
 </script>
+<div class="modal-overlay" id="lightboxModal" onclick="if(event.target===this) closeModal('lightboxModal')">
+  <div class="modal-box">
+    <button type="button" class="modal-close" onclick="closeModal('lightboxModal')">×</button>
+    <img id="lightboxImg" src="" alt="">
+  </div>
+</div>
+
 <div class="toast" id="siteToast"></div>
 </body>
 </html>
